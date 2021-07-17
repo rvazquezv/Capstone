@@ -1,7 +1,7 @@
 ###############################################################################
 ###############################################################################
 
-## ML algortihm for Harvardx Capstone Course
+## ML algorithm for Harvardx Capstone Course
 ## Version: 1.0
 ## Author: Ruben Vázquez del Valle
 ## Comments: 10M version of movielens dataset has been prepared by edx and splitted in two datasets:
