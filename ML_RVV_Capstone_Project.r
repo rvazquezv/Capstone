@@ -26,6 +26,7 @@ RMSE <- function(true, predicted){
   sqrt(mean((true - predicted)^2))
 }
 
+
 ###############################################################################
 ###############################################################################
 
@@ -56,12 +57,14 @@ mu_hat
 naive_rmse <- RMSE(test_set$rating, mu_hat)
 naive_rmse
 
-
+## Save results to table
 rmse_results <- tibble(method = "Naive", RMSE = naive_rmse)
 
 
 
 
+
+## Some analysis on dataset
 edx %>% 
   summarize(n_users = n_distinct(userId),
             n_movies = n_distinct(movieId))
@@ -69,3 +72,43 @@ edx %>%
 users<-sample(edx$userId,500,replace=FALSE)
 movies<-sample(edx$movieId,500,replace=FALSE)
 plot(movies,users)
+##plot(test_set$movieId,test_set$userId)
+
+
+## Adding movies bias
+
+mu <- mean(train_set$rating) 
+movie_avgs <- train_set %>% 
+  group_by(movieId) %>% 
+  summarize(b_i = mean(rating - mu))
+
+qplot(b_i, data = movie_avgs, bins = 10, color = I("black"))
+
+
+predicted_ratings <- test_set %>% 
+  left_join(movie_avgs, by='movieId') %>%
+  mutate(pred = mu + b_i) %>%
+  pull(pred)
+movbias_rmse<-RMSE(predicted_ratings, test_set$rating)
+rmse_results<-rbind(rmse_results,tibble(method = "Movie Bias", RMSE = movbias_rmse))
+
+## Adding user bias
+
+user_avgs <- train_set %>% 
+  left_join(movie_avgs, by='movieId') %>%
+  group_by(userId) %>%
+  summarize(b_u = mean(rating - mu - b_i))
+
+qplot(b_u, data = user_avgs, bins = 10, color = I("black"))
+
+predicted_ratings <- test_set %>% 
+  left_join(movie_avgs, by='movieId') %>%
+  left_join(user_avgs, by='userId') %>%
+  mutate(pred = mu + b_i + b_u) %>%
+  pull(pred)
+movuserbias_rmse<-RMSE(predicted_ratings, test_set$rating)
+rmse_results<-rbind(rmse_results,tibble(method = "Movie Bias + User bias", RMSE = movuserbias_rmse))
+
+
+
+
