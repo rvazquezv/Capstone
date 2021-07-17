@@ -57,4 +57,15 @@ naive_rmse <- RMSE(test_set$rating, mu_hat)
 naive_rmse
 
 
-rmse_results <- tibble(method = "Just the average", RMSE = naive_rmse)
+rmse_results <- tibble(method = "Naive", RMSE = naive_rmse)
+
+
+
+
+edx %>% 
+  summarize(n_users = n_distinct(userId),
+            n_movies = n_distinct(movieId))
+
+users<-sample(edx$userId,500,replace=FALSE)
+movies<-sample(edx$movieId,500,replace=FALSE)
+plot(movies,users)
