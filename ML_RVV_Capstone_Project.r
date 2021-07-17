@@ -51,17 +51,6 @@ test_set <-test_set %>%
   semi_join(train_set, by = "userId")
 
 
-## Naive model
-mu_hat <- mean(train_set$rating)
-mu_hat
-naive_rmse <- RMSE(test_set$rating, mu_hat)
-naive_rmse
-
-## Save results to table
-rmse_results <- tibble(method = "Naive", RMSE = naive_rmse)
-
-
-
 
 
 ## Some analysis on dataset
@@ -72,10 +61,24 @@ edx %>%
 users<-sample(edx$userId,500,replace=FALSE)
 movies<-sample(edx$movieId,500,replace=FALSE)
 plot(movies,users)
-##plot(test_set$movieId,test_set$userId)
 
 
-## Adding movies bias
+plot(test_set$movieId,test_set$userId)
+
+
+
+
+################## 1.Adding Naive model
+mu_hat <- mean(train_set$rating)
+mu_hat
+naive_rmse <- RMSE(test_set$rating, mu_hat)
+
+## Save results to table
+rmse_results <- tibble(method = "Naive", RMSE = naive_rmse)
+
+
+
+################## 2.Adding movies bias
 
 mu <- mean(train_set$rating) 
 movie_avgs <- train_set %>% 
@@ -84,15 +87,18 @@ movie_avgs <- train_set %>%
 
 qplot(b_i, data = movie_avgs, bins = 10, color = I("black"))
 
-
 predicted_ratings <- test_set %>% 
   left_join(movie_avgs, by='movieId') %>%
   mutate(pred = mu + b_i) %>%
   pull(pred)
 movbias_rmse<-RMSE(predicted_ratings, test_set$rating)
+
+## Save results to table
 rmse_results<-rbind(rmse_results,tibble(method = "Movie Bias", RMSE = movbias_rmse))
 
-## Adding user bias
+
+
+################## 3.Adding user bias
 
 user_avgs <- train_set %>% 
   left_join(movie_avgs, by='movieId') %>%
@@ -107,8 +113,11 @@ predicted_ratings <- test_set %>%
   mutate(pred = mu + b_i + b_u) %>%
   pull(pred)
 movuserbias_rmse<-RMSE(predicted_ratings, test_set$rating)
+
+## Save results to table
 rmse_results<-rbind(rmse_results,tibble(method = "Movie Bias + User bias", RMSE = movuserbias_rmse))
 
 
 
+################## 4.Adding 
 
