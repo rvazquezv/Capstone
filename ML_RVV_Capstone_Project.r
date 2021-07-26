@@ -37,7 +37,7 @@ library(lubridate)
 
 ## Year is included in the title, adding a column with the year
 
-edx %>% mutate(year=as.numeric(str_extract(str_extract(title,"\\([^()]+.\\d"),"\\d+\\d")))
+edx<-edx %>% mutate(year=as.numeric(str_extract(str_extract(title,"\\([^()]+.\\d"),"\\d+\\d")))
 
 
 edx %>% group_by(movieId) %>%
