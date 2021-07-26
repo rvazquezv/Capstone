@@ -37,14 +37,7 @@ library(lubridate)
 
 ## Year is included in the title, adding a column with the year
 
-edx<-edx %>% mutate(year=as.numeric(str_extract(str_extract(title,"\\([^()]+.\\d"),"\\d+\\d")))
-
-
-edx %>% group_by(movieId) %>%
-  summarize(n = n(), year = as.character(first(year))) %>%
-  qplot(year, n, data = ., geom = "boxplot") +
-  coord_trans(y = "sqrt") +
-  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+edx<-edx %>% mutate( date = as_datetime(timestamp),year=as.numeric(str_extract(str_extract(title,"\\([^()]+.\\d"),"\\d+\\d")))
 
 
 
@@ -135,4 +128,46 @@ rmse_results<-rbind(rmse_results,tibble(method = "Movie Bias + User bias", RMSE 
 
 
 
-################## 4.Adding 
+################## 4.Adding bias by time, number of rates and genre --- tasks to be added 6.2 exam
+
+
+train_set %>% group_by(movieId) %>%
+  summarize(n = n(), year = as.character(first(year))) %>%
+  qplot(year, n, data = ., geom = "boxplot") +
+  coord_trans(y = "sqrt") +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+
+test_set %>% group_by(movieId) %>%
+  summarize(n = n(), year = as.character(first(year))) %>%
+  qplot(year, n, data = ., geom = "boxplot") +
+  coord_trans(y = "sqrt") +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+## We see that, on average, movies that came out after 1993 get more ratings. We also see that with newer movies, 
+## starting in 1993, the number of ratings decreases with year: the more recent a movie is, the less time users have had to rate it.
+
+
+## The more often a movie is rated, the higher its average rating.
+
+## It will be needed to fill in the missing values with a lower value than the average rating across all movies.
+
+edx %>% 
+  filter(year >= 1993) %>%
+  group_by(movieId) %>%
+  summarize(n = n(), years = 2018 - first(year),
+            title = title[1],
+            rating = mean(rating)) %>%
+  mutate(rate = n/years) %>%
+  ggplot(aes(rate, rating)) +
+  geom_point() +
+  geom_smooth()
+
+## It will be needed to fill in the missing values with a lower value than the average rating across all movies.
+
+edx %>% mutate(date = round_date(date, unit = "week")) %>%
+  group_by(date) %>%
+  summarize(rating = mean(rating)) %>%
+  ggplot(aes(date, rating)) +
+  geom_point() +
+  geom_smooth()
