@@ -31,6 +31,22 @@ RMSE <- function(true, predicted){
 ###############################################################################
 
 
+## Preprocessing original dataset to add info
+
+library(lubridate)
+
+## Year is included in the title, adding a column with the year
+
+edx %>% mutate(year=as.numeric(str_extract(str_extract(title,"\\([^()]+.\\d"),"\\d+\\d")))
+
+
+edx %>% group_by(movieId) %>%
+  summarize(n = n(), year = as.character(first(year))) %>%
+  qplot(year, n, data = ., geom = "boxplot") +
+  coord_trans(y = "sqrt") +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+
 
 ## Selecting a random seed to allow replicability
 set.seed(1978, sample.kind="Rounding")
@@ -120,4 +136,3 @@ rmse_results<-rbind(rmse_results,tibble(method = "Movie Bias + User bias", RMSE 
 
 
 ################## 4.Adding 
-
