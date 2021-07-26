@@ -155,7 +155,7 @@ movusertimebias_rmse<-RMSE(predicted_ratings, test_set$rating)
 movusertimebias_mae<-MAE(predicted_ratings, test_set$rating)
 
 ## Save results to table
-rmse_results<-rbind(rmse_results,tibble(method = "Movie Bias + User bias", RMSE = movusertimebias_rmse,MAE = movusertimebias_mae))
+rmse_results<-rbind(rmse_results,tibble(method = "Movie Bias + User bias + rating day bias", RMSE = movusertimebias_rmse,MAE = movusertimebias_mae))
 
 ################## 5.Adding bias  number of rates and genre --- tasks to be added 6.2 exam
 
