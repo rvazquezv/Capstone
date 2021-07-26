@@ -27,6 +27,12 @@ RMSE <- function(true, predicted){
 }
 
 
+## MAE function to compute Mean Absolute errors between any pair of vectors 
+MAE <- function(true, predicted){
+  mean(abs(true - predicted))
+}
+
+
 ###############################################################################
 ###############################################################################
 
@@ -81,9 +87,10 @@ plot(test_set$movieId,test_set$userId)
 mu_hat <- mean(train_set$rating)
 mu_hat
 naive_rmse <- RMSE(test_set$rating, mu_hat)
+naive_mae <- MAE(test_set$rating, mu_hat)
 
 ## Save results to table
-rmse_results <- tibble(method = "Naive", RMSE = naive_rmse)
+rmse_results <- tibble(method = "Naive", RMSE = naive_rmse, MAE = naive_mae)
 
 
 
@@ -101,9 +108,10 @@ predicted_ratings <- test_set %>%
   mutate(pred = mu + b_i) %>%
   pull(pred)
 movbias_rmse<-RMSE(predicted_ratings, test_set$rating)
+movbias_mae<-MAE(predicted_ratings, test_set$rating)
 
 ## Save results to table
-rmse_results<-rbind(rmse_results,tibble(method = "Movie Bias", RMSE = movbias_rmse))
+rmse_results<-rbind(rmse_results,tibble(method = "Movie Bias", RMSE = movbias_rmse, MAE = movbias_mae))
 
 
 
@@ -122,9 +130,10 @@ predicted_ratings <- test_set %>%
   mutate(pred = mu + b_i + b_u) %>%
   pull(pred)
 movuserbias_rmse<-RMSE(predicted_ratings, test_set$rating)
+movuserbias_mae<-MAE(predicted_ratings, test_set$rating)
 
 ## Save results to table
-rmse_results<-rbind(rmse_results,tibble(method = "Movie Bias + User bias", RMSE = movuserbias_rmse))
+rmse_results<-rbind(rmse_results,tibble(method = "Movie Bias + User bias", RMSE = movuserbias_rmse,MAE = movuserbias_mae))
 
 
 
