@@ -143,7 +143,7 @@ date_avgs <- train_set %>% mutate(date = round_date(date, unit = "day")) %>%
   group_by(date) %>%
   summarize(b_d = mean(rating - mu - b_i - b_u))
 
-qplot(b_d, data = date_avgs, bins = 10, color = I("black"))
+qplot(b_d, data = date_avgs, bins = 10, color = I("black"))   ## distributed all around 0, it seems not to add anything
 
 predicted_ratings <- test_set %>%  mutate(date = round_date(date, unit = "day")) %>%
   left_join(movie_avgs, by='movieId') %>%
@@ -157,7 +157,34 @@ movusertimebias_mae<-MAE(predicted_ratings, test_set$rating)
 ## Save results to table
 rmse_results<-rbind(rmse_results,tibble(method = "Movie Bias + User bias + rating day bias", RMSE = movusertimebias_rmse,MAE = movusertimebias_mae))
 
-################## 5.Adding bias  number of rates and genre --- tasks to be added 6.2 exam
+
+
+################## 5.Adding genre bias  (it seems to tend to 0) 
+
+genre_avgs <- train_set %>% 
+  left_join(movie_avgs, by='movieId') %>%
+  left_join(user_avgs, by='userId') %>%
+  group_by(genres) %>%
+  summarize(b_g = mean(rating - mu - b_i - b_u))
+
+qplot(b_g, data = genre_avgs, bins = 10, color = I("black"))    ## distributed all around 0, it seems not to add anything
+
+predicted_ratings <- test_set %>%  
+  left_join(movie_avgs, by='movieId') %>%
+  left_join(user_avgs, by='userId') %>%
+  left_join(genre_avgs, by='genres') %>%
+  mutate(pred = mu + b_i + b_u + b_g) %>%
+  pull(pred)
+movusergenrebias_rmse<-RMSE(predicted_ratings, test_set$rating)
+movusergenrebias_mae<-MAE(predicted_ratings, test_set$rating)
+
+## Save results to table
+rmse_results<-rbind(rmse_results,tibble(method = "Movie Bias + User bias + Genre bias", RMSE = movusergenrebias_rmse,MAE = movusergenrebias_mae))
+## Currently I have added b_d but I need to add f(b_g), so I need to find f !!!!!
+
+
+
+################## 6.Adding bias  number of rates  --- tasks to be added 6.2 exam
 
 
 train_set %>% group_by(movieId) %>%
