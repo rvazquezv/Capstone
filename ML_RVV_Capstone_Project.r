@@ -33,17 +33,63 @@ MAE <- function(true, predicted){
 }
 
 
+
+
+## substrRight function to substract n last characters on a string
+substrRight <- function(x, n){
+  substr(x, nchar(x)-n+1, nchar(x))
+}
+
+
+## lambda1 function to regularize parameter λ1 according to The BellKor Solution pdf
+lambda1<-function(l1){
+  mu <- mean(train_set$rating)
+  movie_avgs_reg <- train_set %>% 
+    group_by(movieId) %>% 
+    summarize(b_i = sum(rating - mu)/(n()+l1))
+  
+  predicted_ratings <- 
+    test_set %>% 
+    left_join(movie_avgs_reg, by='movieId') %>%
+    mutate(pred = mu + b_i) %>%
+    pull(pred)
+  return(RMSE(predicted_ratings, test_set$rating))
+}
+
+
+## lambda2 function to regularize parameter λ2 according to The BellKor Solution pdf
+lambda2<-function(l2){
+  mu <- mean(train_set$rating)
+  user_avgs <- train_set %>% 
+    left_join(movie_avgs_reg, by='movieId') %>%
+    group_by(userId) %>%
+    summarize(b_u = sum(rating - mu - b_i_reg)/(n()+l2))
+  
+  predicted_ratings <- test_set %>% 
+    left_join(movie_avgs_reg, by='movieId') %>%
+    left_join(user_avgs, by='userId') %>%
+    mutate(pred = mu + b_i_reg + b_u) %>%
+    pull(pred)
+  return(RMSE(predicted_ratings, test_set$rating))
+}
+
+
+
+
 ###############################################################################
 ###############################################################################
 
 
 ## Preprocessing original dataset to add info
 
+
 library(lubridate)
+library(purrr)
 
-## Year is included in the title, adding a column with the year
 
-edx<-edx %>% mutate( date = as_datetime(timestamp),year=as.numeric(str_extract(str_extract(title,"\\([^()]+.\\d"),"\\d+\\d")))
+## Release Year is included in the title, adding a column with the year
+
+edx<-edx %>% mutate( date = as_datetime(timestamp),year=as.numeric(str_extract(str_extract(substrRight(title,6),"\\([^()]+.\\d"),"\\d+\\d")))
 
 
 
@@ -83,7 +129,7 @@ plot(test_set$movieId,test_set$userId)
 
 
 
-################## 1.Adding Naive model
+################## 1. Adding Naive model
 mu_hat <- mean(train_set$rating)
 mu_hat
 naive_rmse <- RMSE(test_set$rating, mu_hat)
@@ -94,7 +140,7 @@ rmse_results <- tibble(method = "Naive", RMSE = naive_rmse, MAE = naive_mae)
 
 
 
-################## 2.Adding movies bias
+################## 2. Adding movies bias
 
 mu <- mean(train_set$rating) 
 movie_avgs <- train_set %>% 
@@ -114,26 +160,85 @@ movbias_mae<-MAE(predicted_ratings, test_set$rating)
 rmse_results<-rbind(rmse_results,tibble(method = "Movie Bias", RMSE = movbias_rmse, MAE = movbias_mae))
 
 
+################## 2.1. Adding movies bias regularized 
+##
+## Following recommendations made by The BellKor Solution pdf, averages are shrunk towards zero by using the regularization 
+## parameters, λ1,λ2, which are determined by validation on the test set
+
+l <- seq(0, 20, 0.25)
+l1<-l[which.min(sapply(l,lambda1))]
+l1
+
+movie_avgs_reg<- train_set %>% 
+  group_by(movieId) %>% 
+  summarize(b_i_reg = sum(rating - mu)/(n()+l1),first_rate_i=min(date))
+
+predicted_ratings <- 
+  test_set %>% 
+  left_join(movie_avgs_reg, by='movieId') %>%
+  mutate(pred = mu + b_i_reg) %>%
+  pull(pred)
+
+movbiasreg_rmse<-RMSE(predicted_ratings, test_set$rating)
+movbiasreg_mae<-MAE(predicted_ratings, test_set$rating)
+
+
+## Save results to table
+rmse_results<-rbind(rmse_results,tibble(method = "Movie Bias regularized", RMSE = movbiasreg_rmse, MAE = movbiasreg_mae))
+
 
 ################## 3.Adding user bias
 
 user_avgs <- train_set %>% 
-  left_join(movie_avgs, by='movieId') %>%
+  left_join(movie_avgs_reg, by='movieId') %>%
   group_by(userId) %>%
-  summarize(b_u = mean(rating - mu - b_i))
+  summarize(b_u = mean(rating - mu - b_i_reg))
 
 qplot(b_u, data = user_avgs, bins = 10, color = I("black"))
 
 predicted_ratings <- test_set %>% 
-  left_join(movie_avgs, by='movieId') %>%
+  left_join(movie_avgs_reg, by='movieId') %>%
   left_join(user_avgs, by='userId') %>%
-  mutate(pred = mu + b_i + b_u) %>%
+  mutate(pred = mu + b_i_reg + b_u) %>%
   pull(pred)
 movuserbias_rmse<-RMSE(predicted_ratings, test_set$rating)
 movuserbias_mae<-MAE(predicted_ratings, test_set$rating)
 
 ## Save results to table
-rmse_results<-rbind(rmse_results,tibble(method = "Movie Bias + User bias", RMSE = movuserbias_rmse,MAE = movuserbias_mae))
+rmse_results<-rbind(rmse_results,tibble(method = "Movie Bias reg + User bias", RMSE = movuserbias_rmse,MAE = movuserbias_mae))
+
+
+################## 3.1. Adding user bias regularized 
+##
+## Following recommendations made by The BellKor Solution pdf, averages are shrunk towards zero by using the regularization 
+## parameters, λ1,λ2, which are determined by validation on the test set
+
+l <- seq(0, 30, 0.25)
+l2<-l[which.min(sapply(l,lambda2))]
+l2
+
+user_avgs_reg <- train_set %>% 
+  left_join(movie_avgs_reg, by='movieId') %>%
+  group_by(userId) %>%
+  summarize(b_u_reg = sum(rating - mu - b_i_reg)/(n()+l2))
+
+predicted_ratings <- test_set %>% 
+  left_join(movie_avgs_reg, by='movieId') %>%
+  left_join(user_avgs, by='userId') %>%
+  mutate(pred = mu + b_i_reg + b_u_reg) %>%
+  pull(pred)
+movuserbiasreg_rmse<-RMSE(predicted_ratings, test_set$rating)
+movuserbiasreg_mae<-MAE(predicted_ratings, test_set$rating)
+
+## Save results to table
+rmse_results<-rbind(rmse_results,tibble(method = "Movie Bias reg + User bias reg ", RMSE = movuserbiasreg_rmse,MAE = movuserbiasreg_mae))
+
+
+
+
+
+
+
 
 ################## 4.Adding date bias  (it seems to tend to 0)
 
