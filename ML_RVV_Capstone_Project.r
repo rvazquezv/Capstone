@@ -74,6 +74,44 @@ lambda2<-function(l2){
 }
 
 
+## dev1 function to calculate αu on dev_u_t (temporal effect on user bias) according to the BellKor Solution pdf 
+dev1<-function(a){
+  date_user_avgs <- train_set %>% mutate(date = round_date(date, unit = "day")) %>%
+    left_join(movie_avgs_reg, by='movieId') %>%
+    left_join(user_avgs_reg, by='userId') %>%
+    group_by(userId) %>%
+    summarize(t_u = mean(date))
+  
+  predicted_ratings <- test_set%>% mutate(date = round_date(date, unit = "day")) %>%
+    left_join(movie_avgs_reg, by='movieId') %>%
+    left_join(user_avgs_reg, by='userId') %>%
+    left_join(date_user_avgs, by='userId') %>%
+    mutate(dev_u_t=as.numeric(difftime(date,t_u,units="days"))) %>%
+    mutate(dev_u_t=a*sign(dev_u_t)*(abs(dev_u_t)^b)) %>%
+    mutate(pred = mu + b_i_reg + b_u_reg +dev_u_t) %>%
+    pull(pred)
+  return(RMSE(predicted_ratings, test_set$rating))
+}
+
+
+## dev2 function to calculate βu on dev_u_t (temporal effect on user bias) according to the BellKor Solution pdf
+dev2<-function(b){
+  date_user_avgs <- train_set %>% mutate(date = round_date(date, unit = "day")) %>%
+    left_join(movie_avgs_reg, by='movieId') %>%
+    left_join(user_avgs_reg, by='userId') %>%
+    group_by(userId) %>%
+    summarize(t_u = mean(date))
+  
+  predicted_ratings <- test_set%>% mutate(date = round_date(date, unit = "day")) %>%
+    left_join(movie_avgs_reg, by='movieId') %>%
+    left_join(user_avgs_reg, by='userId') %>%
+    left_join(date_user_avgs, by='userId') %>%
+    mutate(dev_u_t=as.numeric(difftime(date,t_u,units="days"))) %>%
+    mutate(dev_u_t=a*sign(dev_u_t)*(abs(dev_u_t)^b)) %>%
+    mutate(pred = mu + b_i_reg + b_u_reg +dev_u_t) %>%
+    pull(pred)
+  return(RMSE(predicted_ratings, test_set$rating))
+}
 
 
 ###############################################################################
@@ -236,7 +274,54 @@ rmse_results<-rbind(rmse_results,tibble(method = "Movie Bias reg + User bias reg
 
 
 
-################## 4.Adding date bias  (it seems to tend to 0)
+################## 4.Adding date bias  (it seems to tend to 0) but let's split between movie rating date and user rating date
+
+################################################################################################################################################
+
+
+################## 4.1 Adding user rating date bias  
+
+
+##
+## Following recommendations made by The BellKor Solution pdf, the users tend to change their baseline ratings over time including
+## a natural drift in a user’s rating scale, so we build user bias bu as a function of time dev_u(t) = α·sign(t −tu)·|t −tu|^β
+## α,β are determined by validation on the test set
+
+a<- seq(-0.0015,0.0005,0.00025)
+b<-0.4                               # initial β proposed in The BellKor Solution paper
+devut<-sapply(a,dev1)
+a<-a[which.min(devut)]
+
+b <- seq(0, 1,0.1)
+devut<-sapply(b,dev2)
+b<-b[which.min(devut)]
+
+
+
+date_user_avgs <- train_set %>% mutate(date = round_date(date, unit = "day")) %>%
+  left_join(movie_avgs_reg, by='movieId') %>%
+  left_join(user_avgs_reg, by='userId') %>%
+  group_by(userId) %>%
+  summarize(t_u = mean(date))
+
+predicted_ratings <- test_set%>% mutate(date = round_date(date, unit = "day")) %>%
+  left_join(movie_avgs_reg, by='movieId') %>%
+  left_join(user_avgs_reg, by='userId') %>%
+  left_join(date_user_avgs, by='userId') %>%
+  mutate(dev_u_t=as.numeric(difftime(date,t_u,units="days"))) %>%
+  mutate(dev_u_t=a*sign(dev_u_t)*(abs(dev_u_t)^b)) %>%
+  mutate(pred = mu + b_i_reg + b_u_reg +dev_u_t) %>%
+  pull(pred)
+
+
+usertimebias_rmse<-RMSE(predicted_ratings, test_set$rating)
+usertimebias_mae<-MAE(predicted_ratings, test_set$rating)
+
+## Save results to table
+rmse_results<-rbind(rmse_results,tibble(method = "Movie Bias reg + User bias reg + dev_u(t)", RMSE = usertimebias_rmse,MAE = movusertimebias_mae))
+
+
+################## 4.1 Adding movie rating date bias  
 
 date_avgs <- train_set %>% mutate(date = round_date(date, unit = "day")) %>%
   left_join(movie_avgs_reg, by='movieId') %>%
@@ -328,3 +413,4 @@ edx %>% mutate(date = round_date(date, unit = "week")) %>%
   ggplot(aes(date, rating)) +
   geom_point() +
   geom_smooth()
+
