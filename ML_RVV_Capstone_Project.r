@@ -11,7 +11,16 @@
 
 ###############################################################################
 ###############################################################################
+##  Initialize parameters
+###############################################################################
+###############################################################################
+l1<-2.75
+l2<-5
+a<- -0.00075
+b<- 0.4
 
+##############################################################################
+###############################################################################
 
 
 ###############################################################################
@@ -84,7 +93,7 @@ dev1<-function(a){
     left_join(movie_avgs_reg, by='movieId') %>%
     group_by(userId) %>%
     summarize(b_u_reg = sum(rating - mu - b_i_reg)/(n()+l2),t_u = mean(date))
-
+  
   predicted_ratings <- test_set%>% mutate(date = round_date(date, unit = "day")) %>%
     left_join(movie_avgs_reg, by='movieId') %>%
     left_join(date_user_avgs_reg, by='userId') %>%
@@ -295,11 +304,12 @@ a<- seq(-0.0015,0.0005,0.00025)
 b<-0.4                               # initial β proposed in The BellKor Solution paper
 devut<-sapply(a,dev1)
 a<-a[which.min(devut)]
+a
 
 b <- seq(0, 1,0.1)
 devut<-sapply(b,dev2)
 b<-b[which.min(devut)]
-
+b
 
 
 ## We took advantage of user_avgs_reg not only for calculating b_u_reg but also t_u, so we do not need to calculate it here
@@ -311,10 +321,6 @@ predicted_ratings <- test_set%>% mutate(date = round_date(date, unit = "day")) %
   mutate(dev_u_t=a*sign(dev_u_t)*(abs(dev_u_t)^b)) %>%
   mutate(pred = mu + b_i_reg + b_u_reg +dev_u_t) %>%
   pull(pred)
-
-
-
-
 usertimebias_rmse<-RMSE(predicted_ratings, test_set$rating)
 usertimebias_mae<-MAE(predicted_ratings, test_set$rating)
 
@@ -344,7 +350,6 @@ predicted_ratings <- test_set%>% mutate(date = round_date(date, unit = "day")) %
   pull(pred)
 movusertimebias_rmse<-RMSE(predicted_ratings, test_set$rating)
 movusertimebias_mae<-MAE(predicted_ratings, test_set$rating)
-
 
 ## Save results to table
 rmse_results<-rbind(rmse_results,tibble(method = "Movie Bias reg + User bias reg + dev_u(t) + rating day bias", RMSE = movusertimebias_rmse,MAE = movusertimebias_mae))
@@ -422,4 +427,3 @@ edx %>% mutate(date = round_date(date, unit = "week")) %>%
   ggplot(aes(date, rating)) +
   geom_point() +
   geom_smooth()
-
