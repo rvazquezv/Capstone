@@ -259,7 +259,7 @@ l2
 user_avgs_reg <- train_set %>% 
   left_join(movie_avgs_reg, by='movieId') %>%
   group_by(userId) %>%
-  summarize(b_u_reg = sum(rating - mu - b_i_reg)/(n()+l2))
+  summarize(b_u_reg = sum(rating - mu - b_i_reg)/(n()+l2),t_u = mean(date))
 
 predicted_ratings <- test_set %>% 
   left_join(movie_avgs_reg, by='movieId') %>%
@@ -288,7 +288,7 @@ rmse_results<-rbind(rmse_results,tibble(method = "Movie Bias reg + User bias reg
 ## α,β are determined by validation on the test set
 
 a<- seq(-0.0015,0.0005,0.00025)
-b<-0.4                               # initial β proposed in The BellKor Solution paper
+b<-0.5                               # initial β proposed in The BellKor Solution paper
 devut<-sapply(a,dev1)
 a<-a[which.min(devut)]
 
@@ -321,27 +321,35 @@ usertimebias_mae<-MAE(predicted_ratings, test_set$rating)
 rmse_results<-rbind(rmse_results,tibble(method = "Movie Bias reg + User bias reg + dev_u(t)", RMSE = usertimebias_rmse,MAE = usertimebias_mae))
 
 
-################## 4.1 Adding movie rating date bias  
+################## 4.2 Adding movie rating date bias  
 
 date_avgs <- train_set %>% mutate(date = round_date(date, unit = "day")) %>%
   left_join(movie_avgs_reg, by='movieId') %>%
   left_join(user_avgs_reg, by='userId') %>%
+  mutate(dev_u_t=as.numeric(difftime(date,t_u,units="days"))) %>%
+  mutate(dev_u_t=a*sign(dev_u_t)*(abs(dev_u_t)^b)) %>%
   group_by(date) %>%
-  summarize(b_d = mean(rating - mu - b_i_reg - b_u_reg))
+  summarize(b_d = mean(rating - mu - b_i_reg - b_u_reg - dev_u_t))
 
 qplot(b_d, data = date_avgs, bins = 10, color = I("black"))   ## distributed all around 0, it seems not to add anything
 
-predicted_ratings <- test_set %>%  mutate(date = round_date(date, unit = "day")) %>%
+predicted_ratings <- test_set%>% mutate(date = round_date(date, unit = "day")) %>%
   left_join(movie_avgs_reg, by='movieId') %>%
   left_join(user_avgs_reg, by='userId') %>%
+  mutate(dev_u_t=as.numeric(difftime(date,t_u,units="days"))) %>%
+  mutate(dev_u_t=a*sign(dev_u_t)*(abs(dev_u_t)^b)) %>%
   left_join(date_avgs, by='date') %>%
-  mutate(pred = mu + b_i_reg + b_u_reg + b_d) %>%
+  mutate(pred = mu + b_i_reg + b_u_reg +dev_u_t+b_d) %>%
   pull(pred)
 movusertimebias_rmse<-RMSE(predicted_ratings, test_set$rating)
 movusertimebias_mae<-MAE(predicted_ratings, test_set$rating)
 
+
 ## Save results to table
-rmse_results<-rbind(rmse_results,tibble(method = "Movie Bias reg + User bias reg + rating day bias", RMSE = movusertimebias_rmse,MAE = movusertimebias_mae))
+rmse_results<-rbind(rmse_results,tibble(method = "Movie Bias reg + User bias reg + dev_u(t) + rating day bias", RMSE = movusertimebias_rmse,MAE = movusertimebias_mae))
+
+
+
 
 
 
