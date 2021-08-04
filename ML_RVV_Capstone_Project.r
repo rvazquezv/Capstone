@@ -11,7 +11,16 @@
 
 ###############################################################################
 ###############################################################################
+##  Initialize parameters
+###############################################################################
+###############################################################################
+l1<-2.75
+l2<-5
+a<- -0.00075
+b<- 0.4
 
+##############################################################################
+###############################################################################
 
 
 ###############################################################################
@@ -74,18 +83,20 @@ lambda2<-function(l2){
 }
 
 
-## dev1 function to calculate αu on dev_u_t (temporal effect on user bias) according to the BellKor Solution pdf 
+## dev1 function to calculate α(u) on dev_u(t) (temporal effect on user bias) according to the BellKor Solution pdf 
 dev1<-function(a){
-  date_user_avgs <- train_set %>% mutate(date = round_date(date, unit = "day")) %>%
-    left_join(movie_avgs_reg, by='movieId') %>%
-    left_join(user_avgs_reg, by='userId') %>%
-    group_by(userId) %>%
-    summarize(t_u = mean(date))
+  movie_avgs_reg<- train_set %>% 
+    group_by(movieId) %>% 
+    summarize(b_i_reg = sum(rating - mu)/(n()+l1),first_rate_i=min(date))
   
+  date_user_avgs_reg <- train_set %>% 
+    left_join(movie_avgs_reg, by='movieId') %>%
+    group_by(userId) %>%
+    summarize(b_u_reg = sum(rating - mu - b_i_reg)/(n()+l2),t_u = mean(date))
+
   predicted_ratings <- test_set%>% mutate(date = round_date(date, unit = "day")) %>%
     left_join(movie_avgs_reg, by='movieId') %>%
-    left_join(user_avgs_reg, by='userId') %>%
-    left_join(date_user_avgs, by='userId') %>%
+    left_join(date_user_avgs_reg, by='userId') %>%
     mutate(dev_u_t=as.numeric(difftime(date,t_u,units="days"))) %>%
     mutate(dev_u_t=a*sign(dev_u_t)*(abs(dev_u_t)^b)) %>%
     mutate(pred = mu + b_i_reg + b_u_reg +dev_u_t) %>%
@@ -94,18 +105,20 @@ dev1<-function(a){
 }
 
 
-## dev2 function to calculate βu on dev_u_t (temporal effect on user bias) according to the BellKor Solution pdf
+## dev2 function to calculate β(u) on dev_u(t) (temporal effect on user bias) according to the BellKor Solution pdf
 dev2<-function(b){
-  date_user_avgs <- train_set %>% mutate(date = round_date(date, unit = "day")) %>%
+  movie_avgs_reg<- train_set %>% 
+    group_by(movieId) %>% 
+    summarize(b_i_reg = sum(rating - mu)/(n()+l1),first_rate_i=min(date))
+  
+  date_user_avgs_reg <- train_set %>% 
     left_join(movie_avgs_reg, by='movieId') %>%
-    left_join(user_avgs_reg, by='userId') %>%
     group_by(userId) %>%
-    summarize(t_u = mean(date))
+    summarize(b_u_reg = sum(rating - mu - b_i_reg)/(n()+l2),t_u = mean(date))
   
   predicted_ratings <- test_set%>% mutate(date = round_date(date, unit = "day")) %>%
     left_join(movie_avgs_reg, by='movieId') %>%
-    left_join(user_avgs_reg, by='userId') %>%
-    left_join(date_user_avgs, by='userId') %>%
+    left_join(date_user_avgs_reg, by='userId') %>%
     mutate(dev_u_t=as.numeric(difftime(date,t_u,units="days"))) %>%
     mutate(dev_u_t=a*sign(dev_u_t)*(abs(dev_u_t)^b)) %>%
     mutate(pred = mu + b_i_reg + b_u_reg +dev_u_t) %>%
@@ -288,32 +301,26 @@ rmse_results<-rbind(rmse_results,tibble(method = "Movie Bias reg + User bias reg
 ## α,β are determined by validation on the test set
 
 a<- seq(-0.0015,0.0005,0.00025)
-b<-0.5                               # initial β proposed in The BellKor Solution paper
+b<-0.4                               # initial β proposed in The BellKor Solution paper
 devut<-sapply(a,dev1)
 a<-a[which.min(devut)]
+a
 
 b <- seq(0, 1,0.1)
 devut<-sapply(b,dev2)
 b<-b[which.min(devut)]
+b
 
 
-
-date_user_avgs <- train_set %>% mutate(date = round_date(date, unit = "day")) %>%
-  left_join(movie_avgs_reg, by='movieId') %>%
-  left_join(user_avgs_reg, by='userId') %>%
-  group_by(userId) %>%
-  summarize(t_u = mean(date))
+## We took advantage of user_avgs_reg not only for calculating b_u_reg but also t_u, so we do not need to calculate it here
 
 predicted_ratings <- test_set%>% mutate(date = round_date(date, unit = "day")) %>%
   left_join(movie_avgs_reg, by='movieId') %>%
   left_join(user_avgs_reg, by='userId') %>%
-  left_join(date_user_avgs, by='userId') %>%
   mutate(dev_u_t=as.numeric(difftime(date,t_u,units="days"))) %>%
   mutate(dev_u_t=a*sign(dev_u_t)*(abs(dev_u_t)^b)) %>%
   mutate(pred = mu + b_i_reg + b_u_reg +dev_u_t) %>%
   pull(pred)
-
-
 usertimebias_rmse<-RMSE(predicted_ratings, test_set$rating)
 usertimebias_mae<-MAE(predicted_ratings, test_set$rating)
 
@@ -343,7 +350,6 @@ predicted_ratings <- test_set%>% mutate(date = round_date(date, unit = "day")) %
   pull(pred)
 movusertimebias_rmse<-RMSE(predicted_ratings, test_set$rating)
 movusertimebias_mae<-MAE(predicted_ratings, test_set$rating)
-
 
 ## Save results to table
 rmse_results<-rbind(rmse_results,tibble(method = "Movie Bias reg + User bias reg + dev_u(t) + rating day bias", RMSE = movusertimebias_rmse,MAE = movusertimebias_mae))
