@@ -224,12 +224,24 @@ rm(dl, ratings, movies, test_index, temp, movielens, removed)
 ## Exploratory Analysis
 
 
-The edx dataset is a data.frame consisting of `r format(nrow(edx),big.mark=",",scientific=F)` rows and `r format(ncol(edx),big.mark=",",scientific=F)` columns, with ratings provided by a total of `r format(n_distinct(edx$userId), big.mark=",",scientific=F)` unique users for a total of `r format(n_distinct(edx$movieId),big.mark=",",scientific=F)` unique movies. Generally speaking cartesian product of these two sets would consist on about `r round((n_distinct(edx$userId)*n_distinct(edx$movieId))/1e+06)` million ratings. Hence, is clearly proved that not every user has rated every movie.
+Let's start by exploring and summarizing the edx dataset:
 
-
-Taking a look at the distribution of the ratings
 
 ```{r Exploratory Analysis, message=FALSE}
+
+head(edx)
+summary(edx)
+
+```
+
+
+We can observe that edx dataset is a data.frame consisting of `r format(nrow(edx),big.mark=",",scientific=F)` rows and `r format(ncol(edx),big.mark=",",scientific=F)` columns, with ratings provided by a total of `r format(n_distinct(edx$userId), big.mark=",",scientific=F)` unique users (that I will refer as "u"s) for a total of `r format(n_distinct(edx$movieId),big.mark=",",scientific=F)` unique movies (that I will refer as "i"s). Generally speaking cartesian product of these two sets would consist on about `r round((n_distinct(edx$userId)*n_distinct(edx$movieId))/1e+06)` million ratings. Hence, it is definetively proved that not every user has rated every movie.
+
+Clearly we are provided with a  little bit of pieces of information more than the movie, the user, and the ratings. There are three columns more adding the timestamp (date of the rating done by user u on movie i), the title (a character vector including the release year at the end of the string) and finally a segmentation of the movie by genre (actually, each movie can be included in more than one cathegory)
+
+Taking a look at previous information and at the distribution of the ratings
+
+```{r Exploratory Analysis 2, message=FALSE}
 
 edx %>%
   group_by(rating) %>%
@@ -239,8 +251,111 @@ edx %>%
   ggtitle("Number of occurence of each rating")
 
 ```
-we can appreciate several things:
+
+
+\n we can appreciate several things:
 
     1. The rating given more often is 4*
     2. There is no 0* rating in this dataset
-    3. There seems to be a patter to prefer integer ratings over half ratings
+    3. There seems to be a pattern to prefer integer ratings over rational ratings
+
+
+Taking a look at the distribution of the number of ratings per movie
+
+```{r Exploratory Analysis 3, message=FALSE}
+
+edx %>%
+  group_by(movieId) %>%
+  summarize(n = n())%>%
+  filter(n<5000) %>%
+  ggplot(aes(x = n)) +
+  geom_histogram(bins=15)  + scale_fill_brewer(palette="Blues") +
+  ggtitle("Distribution of number of ratings per movie")
+
+
+```
+
+and at the distribution of the number of ratings per user
+
+
+```{r Exploratory Analysis 4, message=FALSE}
+
+edx %>%
+  group_by(userId) %>%
+  summarize(n = n())%>%
+  ggplot(aes(x = n)) +
+  geom_histogram(bins=15)  + scale_fill_brewer(palette="Blues") +
+  ggtitle("Distribution of number of ratings per movie")
+
+
+```
+
+\n it is obvious that:
+
+
+
+    5. Some movies get rated more than others, and
+    6. Some users are more active than others
+    
+
+Hence, from this introductory analysis, some transformations seem to be needed on edx dataset
+
+
+\newpage  
+
+## Transforming and partitioning edx dataset
+
+Timestamp is not in a human readable format and release year is included in title column, so let's transform timestamp into a more suitable format and extract release year from title to a new column called year
+
+```{r Transforming edx dataset, message=FALSE}
+
+
+edx<-edx %>% mutate( date = as_datetime(timestamp),year=as.numeric(str_extract(str_extract(substrRight(title,6),"\\([^()]+.\\d"),"\\d+\\d")))
+head(edx)
+
+```
+
+
+So now we are ready to create a train and a test set to assess the accuracy of the models we will implement. 
+
+```{r Partitioning edx dataset, message=FALSE}
+
+## Selecting a random seed to allow replicability
+set.seed(1978, sample.kind="Rounding")
+
+
+## Creating training and testing partitions on edx movielens dataset 
+
+test_index <- createDataPartition(y = edx$rating, times = 1, p = 0.2, 
+                                  list = FALSE)
+train_set <- edx[-test_index,]
+test_set <- edx[test_index,]
+
+
+## Making testing partition comparable by taking out movies and users not present on training partition   
+
+test_set <-test_set %>% 
+  semi_join(train_set, by = "movieId") %>%
+  semi_join(train_set, by = "userId")
+
+
+```
+
+And finally we can start to implement our candidate modells
+
+\newpage  
+
+## Modelling
+
+Bell and Koren's paper describing their final solution reflects on different machine learning techniques:
+
+    I.   BASELINE PREDICTORS
+    II.  MATRIX FACTORIZATION WITH TEMPORAL DYNAMICS
+    III. NEIGHBORHOOD MODELS WITH TEMPORAL DYNAMICS
+    IV.  EXTENSIONS TO RESTRICTED BOLTZMANN MACHINES
+    V.   GRADIENT BOOSTING DECISSION TRESS BLENDING
+    
+concluding
+
+
+    The science of recommender systems is a prime beneficiary of the contest. Many new people became involved in the field and made their contributions. There is a clear spike in related publications, and the Netflix dataset is the direct catalyst to developing some of the better algorithms known in the field. Out of the numerous new algorithmic contributions, I would like to highlight one – those humble baseline predictors (or biases), which capture main effects in the data. While the literature mostly concentrates on the more sophisticated algorithmic aspects, we have learned that an accurate treatment of main effects is probably at least as significant as coming up with modeling breakthroughs.
