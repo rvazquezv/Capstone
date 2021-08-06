@@ -163,19 +163,10 @@ test_set <-test_set %>%
   semi_join(train_set, by = "userId")
 
 
-
-
-## Some analysis on dataset
-edx %>% 
-  summarize(n_users = n_distinct(userId),
-            n_movies = n_distinct(movieId))
-
-users<-sample(edx$userId,500,replace=FALSE)
-movies<-sample(edx$movieId,500,replace=FALSE)
-plot(movies,users)
-
-
-plot(test_set$movieId,test_set$userId)
+###############################################################################
+##        Modelling
+##        I.) BASELINE
+###############################################################################
 
 
 

@@ -38,6 +38,7 @@ library(stringr)
 library(caret)
 library(knitr)
 library(scales)
+library(RColorBrewer)
 ```
 
 Following Functions will also be needed for the project
@@ -341,7 +342,7 @@ test_set <-test_set %>%
 
 ```
 
-And finally we can start to implement our candidate modells
+And finally we can start to implement our candidate models
 
 \newpage  
 
