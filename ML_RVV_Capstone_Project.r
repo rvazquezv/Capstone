@@ -178,7 +178,7 @@ naive_rmse <- RMSE(test_set$rating, mu_hat)
 naive_mae <- MAE(test_set$rating, mu_hat)
 
 ## Save results to table
-rmse_results <- tibble(method = "Naive", RMSE = naive_rmse, MAE = naive_mae)
+Results <- tibble(method = "Naive", RMSE = naive_rmse, MAE = naive_mae)
 
 
 
@@ -199,7 +199,7 @@ movbias_rmse<-RMSE(predicted_ratings, test_set$rating)
 movbias_mae<-MAE(predicted_ratings, test_set$rating)
 
 ## Save results to table
-rmse_results<-rbind(rmse_results,tibble(method = "Movie Bias", RMSE = movbias_rmse, MAE = movbias_mae))
+Results<-rbind(Results,tibble(method = "Movie Bias", RMSE = movbias_rmse, MAE = movbias_mae))
 
 
 ################## 2.1. Adding movies bias regularized 
@@ -226,7 +226,7 @@ movbiasreg_mae<-MAE(predicted_ratings, test_set$rating)
 
 
 ## Save results to table
-rmse_results<-rbind(rmse_results,tibble(method = "Movie Bias regularized", RMSE = movbiasreg_rmse, MAE = movbiasreg_mae))
+Results<-rbind(Results,tibble(method = "Movie Bias regularized", RMSE = movbiasreg_rmse, MAE = movbiasreg_mae))
 
 
 
@@ -248,7 +248,7 @@ movuserbias_rmse<-RMSE(predicted_ratings, test_set$rating)
 movuserbias_mae<-MAE(predicted_ratings, test_set$rating)
 
 ## Save results to table
-rmse_results<-rbind(rmse_results,tibble(method = "Movie Bias reg + User bias", RMSE = movuserbias_rmse,MAE = movuserbias_mae))
+Results<-rbind(Results,tibble(method = "Movie Bias reg + User bias", RMSE = movuserbias_rmse,MAE = movuserbias_mae))
 
 
 ################## 3.1. Adding user bias regularized 
@@ -274,7 +274,7 @@ movuserbiasreg_rmse<-RMSE(predicted_ratings, test_set$rating)
 movuserbiasreg_mae<-MAE(predicted_ratings, test_set$rating)
 
 ## Save results to table
-rmse_results<-rbind(rmse_results,tibble(method = "Movie Bias reg + User bias reg", RMSE = movuserbiasreg_rmse,MAE = movuserbiasreg_mae))
+Results<-rbind(Results,tibble(method = "Movie Bias reg + User bias reg", RMSE = movuserbiasreg_rmse,MAE = movuserbiasreg_mae))
 
 
 
@@ -316,7 +316,7 @@ usertimebias_rmse<-RMSE(predicted_ratings, test_set$rating)
 usertimebias_mae<-MAE(predicted_ratings, test_set$rating)
 
 ## Save results to table
-rmse_results<-rbind(rmse_results,tibble(method = "Movie Bias reg + User bias reg + dev_u(t)", RMSE = usertimebias_rmse,MAE = usertimebias_mae))
+Results<-rbind(Results,tibble(method = "Movie Bias reg + User bias reg + dev_u(t)", RMSE = usertimebias_rmse,MAE = usertimebias_mae))
 
 
 ################## 4.2 Adding movie rating date bias  
@@ -343,7 +343,7 @@ movusertimebias_rmse<-RMSE(predicted_ratings, test_set$rating)
 movusertimebias_mae<-MAE(predicted_ratings, test_set$rating)
 
 ## Save results to table
-rmse_results<-rbind(rmse_results,tibble(method = "Movie Bias reg + User bias reg + dev_u(t) + rating day bias", RMSE = movusertimebias_rmse,MAE = movusertimebias_mae))
+Results<-rbind(Results,tibble(method = "Movie Bias reg + User bias reg + dev_u(t) + rating day bias", RMSE = movusertimebias_rmse,MAE = movusertimebias_mae))
 
 
 

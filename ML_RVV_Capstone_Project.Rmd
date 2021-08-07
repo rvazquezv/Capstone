@@ -18,7 +18,7 @@ Once dataset were created I have followed Bell and Koren's paper describing thei
 
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = TRUE,warning = FALSE)
 ```
 
 
@@ -219,11 +219,9 @@ rm(dl, ratings, movies, test_index, temp, movielens, removed)
 
 ```
 
-
 \newpage  
 
 ## Exploratory Analysis
-
 
 Let's start by exploring and summarizing the edx dataset:
 
@@ -236,9 +234,9 @@ summary(edx)
 ```
 
 
-We can observe that edx dataset is a data.frame consisting of `r format(nrow(edx),big.mark=",",scientific=F)` rows and `r format(ncol(edx),big.mark=",",scientific=F)` columns, with ratings provided by a total of `r format(n_distinct(edx$userId), big.mark=",",scientific=F)` unique users (that I will refer as "u"s) for a total of `r format(n_distinct(edx$movieId),big.mark=",",scientific=F)` unique movies (that I will refer as "i"s). Generally speaking cartesian product of these two sets would consist on about `r round((n_distinct(edx$userId)*n_distinct(edx$movieId))/1e+06)` million ratings. Hence, it is definetively proved that not every user has rated every movie.
+It can be observed that edx dataset is a data.frame containing `r format(nrow(edx),big.mark=",",scientific=F)` rows and `r format(ncol(edx),big.mark=",",scientific=F)` columns, with ratings provided by a total of `r format(n_distinct(edx$userId), big.mark=",",scientific=F)` different users (that I will refer as "u"s) for a total of `r format(n_distinct(edx$movieId),big.mark=",",scientific=F)` different movies (that I will refer as "i"s). Generally speaking cartesian product of these two sets would consist on about `r round((n_distinct(edx$userId)*n_distinct(edx$movieId))/1e+06)` million ratings. Hence, it is definetively proved that not every user has rated every movie.
 
-Clearly we are provided with a  little bit of pieces of information more than the movie, the user, and the ratings. There are three columns more adding the timestamp (date of the rating done by user u on movie i), the title (a character vector including the release year at the end of the string) and finally a segmentation of the movie by genre (actually, each movie can be included in more than one cathegory)
+Clearly There are more pieces of information than the movie, the user, and the ratings. There are three columns more including the timestamp (date of the rating done by user u on movie i), the title (a character vector including the release year at the end of the string) and finally a segmentation of the movie by genre (actually, each movie can be included in more than one cathegory)
 
 Taking a look at previous information and at the distribution of the ratings
 
@@ -254,7 +252,7 @@ edx %>%
 ```
 
 
-\n we can appreciate several things:
+\n it can be appreciated several things:
 
     1. The rating given more often is 4*
     2. There is no 0* rating in this dataset
@@ -306,7 +304,7 @@ Hence, from this introductory analysis, some transformations seem to be needed o
 
 ## Transforming and partitioning edx dataset
 
-Timestamp is not in a human readable format and release year is included in title column, so let's transform timestamp into a more suitable format and extract release year from title to a new column called year
+Timestamp is not in a human readable format and release year is included in title column, so let's transform timestamp into a more suitable format and store it into a column called date and extract release year from title to a new column called year
 
 ```{r Transforming edx dataset, message=FALSE}
 
@@ -317,7 +315,7 @@ head(edx)
 ```
 
 
-So now I am ready to create a train and a test set to assess the accuracy of the models I will implement. 
+Now, I am ready to create a train and a test set to assess the accuracy of the models I will implement. 
 
 ```{r Partitioning edx dataset, message=FALSE}
 
@@ -346,7 +344,6 @@ And finally I can start to implement the candidate models
 
 \newpage  
 
-
 ## Modelling
 
 Bell and Koren's paper describing their final solution reflects on different machine learning techniques:
@@ -363,14 +360,12 @@ concluding
     The science of recommender systems is a prime beneficiary of the contest. Many new people became involved in the field and made their contributions. There is a clear spike in related publications, and the Netflix dataset is the direct catalyst to developing some of the better algorithms known in the field. Out of the numerous new algorithmic contributions, I would like to highlight one – those humble baseline predictors (or biases), which capture main effects in the data. While the literature mostly concentrates on the more sophisticated algorithmic aspects, we have learned that an accurate treatment of main effects is probably at least as significant as coming up with modeling breakthroughs.
     
     
-Through this project I will try to follow some of this techniques to obtain a model as good as possible according to my skills starting by the humbling baseline predictors
+Through this project I will try to follow some of this techniques and the explanations given in "HarvardX - PH125.8x course: Data Science - Machine Learning" specially on recommendation systems chapter, to obtain a model as good as possible, according to my skills 
 
 
 In doing so, the fist baseline stage will be the naive one, just only calculating the average stars
 
 ```{r Baseline 1 Naive, message=FALSE}
-
-
 ###############################################################################
 ##        Modeling
 ##        I.) BASELINE
@@ -414,7 +409,7 @@ Results
 
 Results seem better now but still far from acceptable
 
-Following recommendations made by The BellKor Solution pdf, averages are shrunk towards zero by using the regularization parameters, λ1,λ2, which are determined by validation on the test set. For this reason I created the functions lambda1 and lambda2 which will allow me to identify the best values of λ1,λ2. Note that this code has been run several times prior to its final release so in terms to avoid issues with the final deploy I have decided to create some initial parameters (which already calculated better parameters) to prevent any unexpected problem.  
+Following recommendations made by The BellKor Solution pdf, averages are shrunk towards zero by using the regularization parameters, λ1,λ2, which are determined by validation on the test set. For this reason I created the functions lambda1 and lambda2 which will allow me to identify the best values of λ1,λ2. Note that this code has been run several times prior to its final release so in terms to avoid issues with the final deploy I have decided to create some initial parameters (with already calculated better parameters) to prevent any unexpected problem.  
 
 
 ```{r Baseline 2.1 movies bias + regularization, message=FALSE}
@@ -448,7 +443,6 @@ Next step will be to calculate user bias
 
 
 ```{r Baseline 3 movies bias reg + user bias, message=FALSE}
-
 ################## 3.Adding user bias
 
 user_avgs <- train_set %>% 
@@ -476,7 +470,7 @@ Results
 Results are still improving, but not enough. Let`s try also regularization on user bias 
 
 ```{r Baseline 3.1 movies bias reg + user bias reg, message=FALSE}
-
+################## 3.1. Adding user bias regularized 
 
 l <- seq(5, 25, 1)
 l2<-l[which.min(sapply(l,lambda2))]
@@ -501,3 +495,97 @@ Results
 
 ```
 
+The same as movie bias regularization, user bias regularization does not seem to improve too much, but at least improves a little bit so I also decided to keep it as part of my model.
+
+Following recommendations made by The BellKor Solution pdf, the users tend to change their baseline ratings over time including a natural drift in a user’s rating scale, as we can see on the next plots
+
+```{r Baseline reflexion on time effect, message=FALSE}
+
+edx %>% mutate(date = round_date(date, unit = "week")) %>%
+  group_by(date) %>%
+  summarize(rating = mean(rating)) %>%
+  ggplot(aes(date, rating)) +
+  geom_point() +
+  geom_smooth()
+
+edx %>% mutate(date = round_date(date, unit = "month")) %>%
+  group_by(date) %>%
+  summarize(rating = mean(rating)) %>%
+  ggplot(aes(date, rating)) +
+  geom_point() +
+  geom_smooth()
+
+```
+
+so following their path I have built user bias bu as a function of time dev_u(t) = α·sign(t −tu)·|t −tu|^β where α and β are determined by validation on the test set
+
+
+```{r Baseline  4.1  user rating date bias , message=FALSE}
+################## 4.1 Adding user rating date bias  
+
+a<- seq(-0.0015,0.0005,0.00025)
+b<-0.4                               # initial β proposed in The BellKor Solution paper
+devut<-sapply(a,dev1)
+a<-a[which.min(devut)]
+a
+
+b <- seq(0, 1,0.1)
+devut<-sapply(b,dev2)
+b<-b[which.min(devut)]
+b
+
+
+## We took advantage of user_avgs_reg not only for calculating b_u_reg but also t_u, so we do not need to calculate it here
+
+predicted_ratings <- test_set%>% mutate(date = round_date(date, unit = "day")) %>%
+  left_join(movie_avgs_reg, by='movieId') %>%
+  left_join(user_avgs_reg, by='userId') %>%
+  mutate(dev_u_t=as.numeric(difftime(date,t_u,units="days"))) %>%
+  mutate(dev_u_t=a*sign(dev_u_t)*(abs(dev_u_t)^b)) %>%
+  mutate(pred = mu + b_i_reg + b_u_reg +dev_u_t) %>%
+  pull(pred)
+usertimebias_rmse<-RMSE(predicted_ratings, test_set$rating)
+usertimebias_mae<-MAE(predicted_ratings, test_set$rating)
+
+## Save results to table
+Results<-rbind(Results,tibble(method = "Movie Bias reg + User bias reg + dev_u(t)", RMSE = usertimebias_rmse,MAE = usertimebias_mae))
+Results
+
+```
+
+The “BellKor’s Pragmatic Chaos” final solution, which won the Netflix Grand Prize also suggest the fact that an item’s popularity
+may change over time.They decided to split the item biases into time-based bins, using a constant item bias for each time period:
+bi(t) = bi +bi,Bin(t)
+
+
+After several trial, all my attempts worsened too much RMSE and MAE so I desisted on trying to catch this effect like this
+Finally I opted by trying to capture it "globally" as I have done with movies and user bias
+
+```{r Baseline  4.2  movie rating date bias , message=FALSE}
+################## 4.2 Adding movie rating date bias  
+
+date_avgs <- train_set %>% mutate(date = round_date(date, unit = "day")) %>%
+  left_join(movie_avgs_reg, by='movieId') %>%
+  left_join(user_avgs_reg, by='userId') %>%
+  mutate(dev_u_t=as.numeric(difftime(date,t_u,units="days"))) %>%
+  mutate(dev_u_t=a*sign(dev_u_t)*(abs(dev_u_t)^b)) %>%
+  group_by(date) %>%
+  summarize(b_d = mean(rating - mu - b_i_reg - b_u_reg - dev_u_t))
+
+qplot(b_d, data = date_avgs, bins = 10, color = I("black"))   ## distributed all around 0, it seems not to add anything
+
+predicted_ratings <- test_set%>% mutate(date = round_date(date, unit = "day")) %>%
+  left_join(movie_avgs_reg, by='movieId') %>%
+  left_join(user_avgs_reg, by='userId') %>%
+  mutate(dev_u_t=as.numeric(difftime(date,t_u,units="days"))) %>%
+  mutate(dev_u_t=a*sign(dev_u_t)*(abs(dev_u_t)^b)) %>%
+  left_join(date_avgs, by='date') %>%
+  mutate(pred = mu + b_i_reg + b_u_reg +dev_u_t+b_d) %>%
+  pull(pred)
+movusertimebias_rmse<-RMSE(predicted_ratings, test_set$rating)
+movusertimebias_mae<-MAE(predicted_ratings, test_set$rating)
+
+## Save results to table
+Results<-rbind(Results,tibble(method = "Movie Bias reg + User bias reg + dev_u(t) + rating day bias", RMSE = movusertimebias_rmse,MAE = movusertimebias_mae))
+Results
+```
