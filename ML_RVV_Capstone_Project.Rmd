@@ -342,21 +342,162 @@ test_set <-test_set %>%
 
 ```
 
-And finally we can start to implement our candidate models
+And finally I can start to implement the candidate models
 
 \newpage  
+
 
 ## Modelling
 
 Bell and Koren's paper describing their final solution reflects on different machine learning techniques:
 
-    I.   BASELINE PREDICTORS
-    II.  MATRIX FACTORIZATION WITH TEMPORAL DYNAMICS
-    III. NEIGHBORHOOD MODELS WITH TEMPORAL DYNAMICS
-    IV.  EXTENSIONS TO RESTRICTED BOLTZMANN MACHINES
-    V.   GRADIENT BOOSTING DECISSION TRESS BLENDING
+    I   BASELINE PREDICTORS
+    II  MATRIX FACTORIZATION WITH TEMPORAL DYNAMICS
+    III NEIGHBORHOOD MODELS WITH TEMPORAL DYNAMICS
+    IV  EXTENSIONS TO RESTRICTED BOLTZMANN MACHINES
+    V   GRADIENT BOOSTING DECISSION TRESS BLENDING
     
 concluding
 
 
     The science of recommender systems is a prime beneficiary of the contest. Many new people became involved in the field and made their contributions. There is a clear spike in related publications, and the Netflix dataset is the direct catalyst to developing some of the better algorithms known in the field. Out of the numerous new algorithmic contributions, I would like to highlight one – those humble baseline predictors (or biases), which capture main effects in the data. While the literature mostly concentrates on the more sophisticated algorithmic aspects, we have learned that an accurate treatment of main effects is probably at least as significant as coming up with modeling breakthroughs.
+    
+    
+Through this project I will try to follow some of this techniques to obtain a model as good as possible according to my skills starting by the humbling baseline predictors
+
+
+In doing so, the fist baseline stage will be the naive one, just only calculating the average stars
+
+```{r Baseline 1 Naive, message=FALSE}
+
+
+###############################################################################
+##        Modeling
+##        I.) BASELINE
+###############################################################################
+
+################## 1. Adding Naive model
+mu_hat <- mean(train_set$rating)
+naive_rmse <- RMSE(test_set$rating, mu_hat)
+naive_mae <- MAE(test_set$rating, mu_hat)
+
+## Save results to table
+Results <- tibble(method = "Naive", RMSE = naive_rmse, MAE = naive_mae)
+Results
+
+```
+
+As expected results are still far from being acceptable so next step will be including bias introduced by movies
+
+```{r Baseline 2 movies bias, message=FALSE}
+################## 2. Adding movies bias
+
+mu <- mean(train_set$rating) 
+movie_avgs <- train_set %>% 
+  group_by(movieId) %>% 
+  summarize(b_i = mean(rating - mu))
+
+qplot(b_i, data = movie_avgs, bins = 10, color = I("black"))
+
+predicted_ratings <- test_set %>% 
+  left_join(movie_avgs, by='movieId') %>%
+  mutate(pred = mu + b_i) %>%
+  pull(pred)
+movbias_rmse<-RMSE(predicted_ratings, test_set$rating)
+movbias_mae<-MAE(predicted_ratings, test_set$rating)
+
+## Save results to table
+Results<-rbind(Results,tibble(method = "Movie Bias", RMSE = movbias_rmse, MAE = movbias_mae))
+Results
+
+```
+
+Results seem better now but still far from acceptable
+
+Following recommendations made by The BellKor Solution pdf, averages are shrunk towards zero by using the regularization parameters, λ1,λ2, which are determined by validation on the test set. For this reason I created the functions lambda1 and lambda2 which will allow me to identify the best values of λ1,λ2. Note that this code has been run several times prior to its final release so in terms to avoid issues with the final deploy I have decided to create some initial parameters (which already calculated better parameters) to prevent any unexpected problem.  
+
+
+```{r Baseline 2.1 movies bias + regularization, message=FALSE}
+################## 2.1. Adding movies bias regularized 
+
+l <- seq(0, 20, 0.25)
+l1<-l[which.min(sapply(l,lambda1))]
+l1
+
+movie_avgs_reg<- train_set %>% 
+  group_by(movieId) %>% 
+  summarize(b_i_reg = sum(rating - mu)/(n()+l1),first_rate_i=min(date))
+
+predicted_ratings <- 
+  test_set %>% 
+  left_join(movie_avgs_reg, by='movieId') %>%
+  mutate(pred = mu + b_i_reg) %>%
+  pull(pred)
+
+movbiasreg_rmse<-RMSE(predicted_ratings, test_set$rating)
+movbiasreg_mae<-MAE(predicted_ratings, test_set$rating)
+
+
+## Save results to table
+Results<-rbind(Results,tibble(method = "Movie Bias regularized", RMSE = movbiasreg_rmse, MAE = movbiasreg_mae))
+Results
+```
+
+Regularization does not seem to improve too much, but at least improves so I decided to keep it as part of my model.
+Next step will be to calculate user bias
+
+
+```{r Baseline 3 movies bias reg + user bias, message=FALSE}
+
+################## 3.Adding user bias
+
+user_avgs <- train_set %>% 
+  left_join(movie_avgs_reg, by='movieId') %>%
+  group_by(userId) %>%
+  summarize(b_u = mean(rating - mu - b_i_reg))
+
+qplot(b_u, data = user_avgs, bins = 10, color = I("black"))
+
+predicted_ratings <- test_set %>% 
+  left_join(movie_avgs_reg, by='movieId') %>%
+  left_join(user_avgs, by='userId') %>%
+  mutate(pred = mu + b_i_reg + b_u) %>%
+  pull(pred)
+movuserbias_rmse<-RMSE(predicted_ratings, test_set$rating)
+movuserbias_mae<-MAE(predicted_ratings, test_set$rating)
+
+## Save results to table
+Results<-rbind(Results,tibble(method = "Movie Bias reg + User bias", RMSE = movuserbias_rmse,MAE = movuserbias_mae))
+Results
+
+```
+
+
+Results are still improving, but not enough. Let`s try also regularization on user bias 
+
+```{r Baseline 3.1 movies bias reg + user bias reg, message=FALSE}
+
+
+l <- seq(5, 25, 1)
+l2<-l[which.min(sapply(l,lambda2))]
+l2
+
+user_avgs_reg <- train_set %>% 
+  left_join(movie_avgs_reg, by='movieId') %>%
+  group_by(userId) %>%
+  summarize(b_u_reg = sum(rating - mu - b_i_reg)/(n()+l2),t_u = mean(date))
+
+predicted_ratings <- test_set %>% 
+  left_join(movie_avgs_reg, by='movieId') %>%
+  left_join(user_avgs_reg, by='userId') %>%
+  mutate(pred = mu + b_i_reg + b_u_reg) %>%
+  pull(pred)
+movuserbiasreg_rmse<-RMSE(predicted_ratings, test_set$rating)
+movuserbiasreg_mae<-MAE(predicted_ratings, test_set$rating)
+
+## Save results to table
+Results<-rbind(Results,tibble(method = "Movie Bias reg + User bias reg", RMSE = movuserbiasreg_rmse,MAE = movuserbiasreg_mae))
+Results
+
+```
+
