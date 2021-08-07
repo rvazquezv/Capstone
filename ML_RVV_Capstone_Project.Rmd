@@ -219,6 +219,7 @@ rm(dl, ratings, movies, test_index, temp, movielens, removed)
 
 ```
 
+
 \newpage  
 
 ## Exploratory Analysis
@@ -236,7 +237,7 @@ summary(edx)
 
 It can be observed that edx dataset is a data.frame containing `r format(nrow(edx),big.mark=",",scientific=F)` rows and `r format(ncol(edx),big.mark=",",scientific=F)` columns, with ratings provided by a total of `r format(n_distinct(edx$userId), big.mark=",",scientific=F)` different users (that I will refer as "u"s) for a total of `r format(n_distinct(edx$movieId),big.mark=",",scientific=F)` different movies (that I will refer as "i"s). Generally speaking cartesian product of these two sets would consist on about `r round((n_distinct(edx$userId)*n_distinct(edx$movieId))/1e+06)` million ratings. Hence, it is definetively proved that not every user has rated every movie.
 
-Clearly There are more pieces of information than the movie, the user, and the ratings. There are three columns more including the timestamp (date of the rating done by user u on movie i), the title (a character vector including the release year at the end of the string) and finally a segmentation of the movie by genre (actually, each movie can be included in more than one cathegory)
+Clearly,there are more pieces of information than the movie, the user, and the ratings. There are three columns more including the timestamp (date of the rating done by user u on movie i), the title (a character vector including the release year at the end of the string) and finally a segmentation of the movie by genre (actually, each movie can be included in more than one cathegory)
 
 Taking a look at previous information and at the distribution of the ratings
 
@@ -266,9 +267,8 @@ Taking a look at the distribution of the number of ratings per movie
 edx %>%
   group_by(movieId) %>%
   summarize(n = n())%>%
-  filter(n<5000) %>%
   ggplot(aes(x = n)) +
-  geom_histogram(bins=15)  + scale_fill_brewer(palette="Blues") +
+  geom_histogram(bins=15)  + scale_fill_brewer(palette="Blues") +  scale_x_log10()+
   ggtitle("Distribution of number of ratings per movie")
 
 
@@ -283,8 +283,8 @@ edx %>%
   group_by(userId) %>%
   summarize(n = n())%>%
   ggplot(aes(x = n)) +
-  geom_histogram(bins=15)  + scale_fill_brewer(palette="Blues") +
-  ggtitle("Distribution of number of ratings per movie")
+  geom_histogram(bins=15)  + scale_fill_brewer(palette="Blues") + scale_x_log10()+
+  ggtitle("Distribution of number of ratings per user")
 
 
 ```
@@ -360,7 +360,7 @@ concluding
     The science of recommender systems is a prime beneficiary of the contest. Many new people became involved in the field and made their contributions. There is a clear spike in related publications, and the Netflix dataset is the direct catalyst to developing some of the better algorithms known in the field. Out of the numerous new algorithmic contributions, I would like to highlight one – those humble baseline predictors (or biases), which capture main effects in the data. While the literature mostly concentrates on the more sophisticated algorithmic aspects, we have learned that an accurate treatment of main effects is probably at least as significant as coming up with modeling breakthroughs.
     
     
-Through this project I will try to follow some of this techniques and the explanations given in "HarvardX - PH125.8x course: Data Science - Machine Learning" specially on recommendation systems chapter, to obtain a model as good as possible, according to my skills 
+Through this project I will try to follow some of this techniques and the explanations given in *"HarvardX - PH125.8x course: Data Science - Machine Learning"* specially on recommendation systems chapter, to obtain a model as good as possible, according to my skills 
 
 
 In doing so, the fist baseline stage will be the naive one, just only calculating the average stars
