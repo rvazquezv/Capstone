@@ -317,7 +317,7 @@ head(edx)
 ```
 
 
-So now we are ready to create a train and a test set to assess the accuracy of the models I will implement. 
+So now I am ready to create a train and a test set to assess the accuracy of the models I will implement. 
 
 ```{r Partitioning edx dataset, message=FALSE}
 
