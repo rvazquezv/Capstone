@@ -195,7 +195,7 @@ dev2<-function(b){
 
 library(lubridate)
 library(purrr)
-
+library(RColorBrewer)
 
 ## Release Year is included in the title, adding a column with the year
 
