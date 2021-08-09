@@ -82,8 +82,7 @@ lambda2<-function(l2){
   return(RMSE(predicted_ratings, test_set$rating))
 }
 
-
-## dev1 function to calculate α(u) on dev_u(t) (temporal effect on user bias) according to the BellKor Solution pdf 
+## dev1 function to calculate α(u) on dev_u(t) (temporal effect on user bias) according to the BellKor Solution pdf after applying  bi(t) = bi +bi,Bin(t)
 dev1<-function(a){
   movie_avgs_reg<- train_set %>% 
     group_by(movieId) %>% 
@@ -94,18 +93,48 @@ dev1<-function(a){
     group_by(userId) %>%
     summarize(b_u_reg = sum(rating - mu - b_i_reg)/(n()+l2),t_u = mean(date))
   
-  predicted_ratings <- test_set%>% mutate(date = round_date(date, unit = "day")) %>%
+  movie_avgs_reg_bin<-train_set %>% 
     left_join(movie_avgs_reg, by='movieId') %>%
-    left_join(date_user_avgs_reg, by='userId') %>%
+    left_join(date_user_avgs_reg, by='userId')  %>%
+    mutate(bin=case_when(difftime(date,first_rate_i,units="days")<=180 ~ 1,
+                         difftime(date,first_rate_i,units="days")>180 & difftime(date,first_rate_i,units="days")<=365 ~ 2,
+                         difftime(date,first_rate_i,units="days")>365 & difftime(date,first_rate_i,units="days")<=545 ~ 3,
+                         difftime(date,first_rate_i,units="days")>545 & difftime(date,first_rate_i,units="days")<=730 ~ 4,
+                         difftime(date,first_rate_i,units="days")>730 & difftime(date,first_rate_i,units="days")<=915 ~ 5,
+                         difftime(date,first_rate_i,units="days")>915 & difftime(date,first_rate_i,units="days")<=1095 ~ 6,
+                         difftime(date,first_rate_i,units="days")>1095 & difftime(date,first_rate_i,units="days")<=1280 ~ 7,
+                         difftime(date,first_rate_i,units="days")>1280 & difftime(date,first_rate_i,units="days")<=1465 ~ 8,
+                         difftime(date,first_rate_i,units="days")>1465 & difftime(date,first_rate_i,units="days")<=1645 ~ 9,
+                         difftime(date,first_rate_i,units="days")>1645~10)
+    )%>%
+    group_by(movieId,bin) %>% 
+    summarize(b_i = mean(rating - mu - b_i_reg - b_u_reg))
+  
+  
+  predicted_ratings <- test_set %>% 
+    left_join(movie_avgs_reg, by='movieId') %>%
+    mutate(bin=case_when(difftime(date,first_rate_i,units="days")<=180 ~ 1,
+                         difftime(date,first_rate_i,units="days")>180 & difftime(date,first_rate_i,units="days")<=365 ~ 2,
+                         difftime(date,first_rate_i,units="days")>365 & difftime(date,first_rate_i,units="days")<=545 ~ 3,
+                         difftime(date,first_rate_i,units="days")>545 & difftime(date,first_rate_i,units="days")<=730 ~ 4,
+                         difftime(date,first_rate_i,units="days")>730 & difftime(date,first_rate_i,units="days")<=915 ~ 5,
+                         difftime(date,first_rate_i,units="days")>915 & difftime(date,first_rate_i,units="days")<=1095 ~ 6,
+                         difftime(date,first_rate_i,units="days")>1095 & difftime(date,first_rate_i,units="days")<=1280 ~ 7,
+                         difftime(date,first_rate_i,units="days")>1280 & difftime(date,first_rate_i,units="days")<=1465 ~ 8,
+                         difftime(date,first_rate_i,units="days")>1465 & difftime(date,first_rate_i,units="days")<=1645 ~ 9,
+                         difftime(date,first_rate_i,units="days")>1645~10)
+    )  %>%
+    left_join(date_user_avgs_reg, by='userId')%>%
+    left_join(movie_avgs_reg_bin, by=c('movieId','bin'))%>%
     mutate(dev_u_t=as.numeric(difftime(date,t_u,units="days"))) %>%
     mutate(dev_u_t=a*sign(dev_u_t)*(abs(dev_u_t)^b)) %>%
-    mutate(pred = mu + b_i_reg + b_u_reg +dev_u_t) %>%
+    mutate(pred = mu + b_i_reg + b_u_reg + ifelse(is.na(b_i),0,b_i)+dev_u_t) %>%         
     pull(pred)
   return(RMSE(predicted_ratings, test_set$rating))
 }
 
 
-## dev2 function to calculate β(u) on dev_u(t) (temporal effect on user bias) according to the BellKor Solution pdf
+## dev2 function to calculate β(u) on dev_u(t) (temporal effect on user bias) according to the BellKor Solution pdf after applying movies bias reg as time function bi(t) = bi +bi,Bin(t)
 dev2<-function(b){
   movie_avgs_reg<- train_set %>% 
     group_by(movieId) %>% 
@@ -116,12 +145,42 @@ dev2<-function(b){
     group_by(userId) %>%
     summarize(b_u_reg = sum(rating - mu - b_i_reg)/(n()+l2),t_u = mean(date))
   
-  predicted_ratings <- test_set%>% mutate(date = round_date(date, unit = "day")) %>%
+  movie_avgs_reg_bin<-train_set %>% 
     left_join(movie_avgs_reg, by='movieId') %>%
-    left_join(date_user_avgs_reg, by='userId') %>%
+    left_join(user_avgs_reg, by='userId')  %>%
+    mutate(bin=case_when(difftime(date,first_rate_i,units="days")<=180 ~ 1,
+                         difftime(date,first_rate_i,units="days")>180 & difftime(date,first_rate_i,units="days")<=365 ~ 2,
+                         difftime(date,first_rate_i,units="days")>365 & difftime(date,first_rate_i,units="days")<=545 ~ 3,
+                         difftime(date,first_rate_i,units="days")>545 & difftime(date,first_rate_i,units="days")<=730 ~ 4,
+                         difftime(date,first_rate_i,units="days")>730 & difftime(date,first_rate_i,units="days")<=915 ~ 5,
+                         difftime(date,first_rate_i,units="days")>915 & difftime(date,first_rate_i,units="days")<=1095 ~ 6,
+                         difftime(date,first_rate_i,units="days")>1095 & difftime(date,first_rate_i,units="days")<=1280 ~ 7,
+                         difftime(date,first_rate_i,units="days")>1280 & difftime(date,first_rate_i,units="days")<=1465 ~ 8,
+                         difftime(date,first_rate_i,units="days")>1465 & difftime(date,first_rate_i,units="days")<=1645 ~ 9,
+                         difftime(date,first_rate_i,units="days")>1645~10)
+    )%>%
+    group_by(movieId,bin) %>% 
+    summarize(b_i = mean(rating - mu - b_i_reg - b_u_reg))
+  
+  
+  predicted_ratings <- test_set %>% 
+    left_join(movie_avgs_reg, by='movieId') %>%
+    mutate(bin=case_when(difftime(date,first_rate_i,units="days")<=180 ~ 1,
+                         difftime(date,first_rate_i,units="days")>180 & difftime(date,first_rate_i,units="days")<=365 ~ 2,
+                         difftime(date,first_rate_i,units="days")>365 & difftime(date,first_rate_i,units="days")<=545 ~ 3,
+                         difftime(date,first_rate_i,units="days")>545 & difftime(date,first_rate_i,units="days")<=730 ~ 4,
+                         difftime(date,first_rate_i,units="days")>730 & difftime(date,first_rate_i,units="days")<=915 ~ 5,
+                         difftime(date,first_rate_i,units="days")>915 & difftime(date,first_rate_i,units="days")<=1095 ~ 6,
+                         difftime(date,first_rate_i,units="days")>1095 & difftime(date,first_rate_i,units="days")<=1280 ~ 7,
+                         difftime(date,first_rate_i,units="days")>1280 & difftime(date,first_rate_i,units="days")<=1465 ~ 8,
+                         difftime(date,first_rate_i,units="days")>1465 & difftime(date,first_rate_i,units="days")<=1645 ~ 9,
+                         difftime(date,first_rate_i,units="days")>1645~10)
+    )  %>%
+    left_join(date_user_avgs_reg, by='userId')%>%
+    left_join(movie_avgs_reg_bin, by=c('movieId','bin'))%>%
     mutate(dev_u_t=as.numeric(difftime(date,t_u,units="days"))) %>%
     mutate(dev_u_t=a*sign(dev_u_t)*(abs(dev_u_t)^b)) %>%
-    mutate(pred = mu + b_i_reg + b_u_reg +dev_u_t) %>%
+    mutate(pred = mu + b_i_reg + b_u_reg + ifelse(is.na(b_i),0,b_i)+dev_u_t) %>%         
     pull(pred)
   return(RMSE(predicted_ratings, test_set$rating))
 }
@@ -277,14 +336,54 @@ movuserbiasreg_mae<-MAE(predicted_ratings, test_set$rating)
 Results<-rbind(Results,tibble(method = "Movie Bias reg + User bias reg", RMSE = movuserbiasreg_rmse,MAE = movuserbiasreg_mae))
 
 
+################## 4.1 Adding movies bias regularized as a function of time segmented in bins
+## Following recommendations made by The BellKor Solution pdf bi(t) = bi +bi,Bin(t) 
+movie_avgs_reg_bin<-train_set %>% 
+  left_join(movie_avgs_reg, by='movieId') %>%
+  left_join(user_avgs_reg, by='userId')  %>%
+  mutate(bin=case_when(difftime(date,first_rate_i,units="days")<=180 ~ 1,
+                       difftime(date,first_rate_i,units="days")>180 & difftime(date,first_rate_i,units="days")<=365 ~ 2,
+                       difftime(date,first_rate_i,units="days")>365 & difftime(date,first_rate_i,units="days")<=545 ~ 3,
+                       difftime(date,first_rate_i,units="days")>545 & difftime(date,first_rate_i,units="days")<=730 ~ 4,
+                       difftime(date,first_rate_i,units="days")>730 & difftime(date,first_rate_i,units="days")<=915 ~ 5,
+                       difftime(date,first_rate_i,units="days")>915 & difftime(date,first_rate_i,units="days")<=1095 ~ 6,
+                       difftime(date,first_rate_i,units="days")>1095 & difftime(date,first_rate_i,units="days")<=1280 ~ 7,
+                       difftime(date,first_rate_i,units="days")>1280 & difftime(date,first_rate_i,units="days")<=1465 ~ 8,
+                       difftime(date,first_rate_i,units="days")>1465 & difftime(date,first_rate_i,units="days")<=1645 ~ 9,
+                       difftime(date,first_rate_i,units="days")>1645~10)
+  )%>%
+  group_by(movieId,bin) %>% 
+  summarize(b_i = mean(rating - mu - b_i_reg - b_u_reg))
 
-################## 4.Adding date bias  (it seems to tend to 0) but let's split between movie rating date and user rating date
+qplot(b_i, data = movie_avgs_reg_bin, bins = 10, color = I("black"))
 
-################################################################################################################################################
+predicted_ratings <- test_set %>% 
+  left_join(movie_avgs_reg, by='movieId') %>%
+  mutate(bin=case_when(difftime(date,first_rate_i,units="days")<=180 ~ 1,
+                       difftime(date,first_rate_i,units="days")>180 & difftime(date,first_rate_i,units="days")<=365 ~ 2,
+                       difftime(date,first_rate_i,units="days")>365 & difftime(date,first_rate_i,units="days")<=545 ~ 3,
+                       difftime(date,first_rate_i,units="days")>545 & difftime(date,first_rate_i,units="days")<=730 ~ 4,
+                       difftime(date,first_rate_i,units="days")>730 & difftime(date,first_rate_i,units="days")<=915 ~ 5,
+                       difftime(date,first_rate_i,units="days")>915 & difftime(date,first_rate_i,units="days")<=1095 ~ 6,
+                       difftime(date,first_rate_i,units="days")>1095 & difftime(date,first_rate_i,units="days")<=1280 ~ 7,
+                       difftime(date,first_rate_i,units="days")>1280 & difftime(date,first_rate_i,units="days")<=1465 ~ 8,
+                       difftime(date,first_rate_i,units="days")>1465 & difftime(date,first_rate_i,units="days")<=1645 ~ 9,
+                       difftime(date,first_rate_i,units="days")>1645~10)
+  )  %>%
+  left_join(user_avgs_reg, by='userId')%>%
+  left_join(movie_avgs_reg_bin, by=c('movieId','bin'))%>%
+  mutate(pred = mu + b_i_reg + b_u_reg + ifelse(is.na(b_i),0,b_i)) %>%         
+  pull(pred)
+movbiasregbin_rmse<-RMSE(predicted_ratings, test_set$rating) 
+movbiasregbin_mae<-MAE(predicted_ratings, test_set$rating)
 
 
-################## 4.1 Adding user rating date bias  
 
+## Save results to table
+Results<-rbind(Results,tibble(method = "Movie Bias reg + User bias reg+ time effect on movie Bias reg", RMSE = movbiasregbin_rmse, MAE = movbiasregbin_mae))
+
+
+################## 4.2 Adding user rating date bias  
 
 ##
 ## Following recommendations made by The BellKor Solution pdf, the users tend to change their baseline ratings over time including
@@ -304,49 +403,30 @@ b
 
 
 ## We took advantage of user_avgs_reg not only for calculating b_u_reg but also t_u, so we do not need to calculate it here
-
-predicted_ratings <- test_set%>% mutate(date = round_date(date, unit = "day")) %>%
+predicted_ratings <- test_set %>% 
   left_join(movie_avgs_reg, by='movieId') %>%
-  left_join(user_avgs_reg, by='userId') %>%
+  mutate(bin=case_when(difftime(date,first_rate_i,units="days")<=180 ~ 1,
+                       difftime(date,first_rate_i,units="days")>180 & difftime(date,first_rate_i,units="days")<=365 ~ 2,
+                       difftime(date,first_rate_i,units="days")>365 & difftime(date,first_rate_i,units="days")<=545 ~ 3,
+                       difftime(date,first_rate_i,units="days")>545 & difftime(date,first_rate_i,units="days")<=730 ~ 4,
+                       difftime(date,first_rate_i,units="days")>730 & difftime(date,first_rate_i,units="days")<=915 ~ 5,
+                       difftime(date,first_rate_i,units="days")>915 & difftime(date,first_rate_i,units="days")<=1095 ~ 6,
+                       difftime(date,first_rate_i,units="days")>1095 & difftime(date,first_rate_i,units="days")<=1280 ~ 7,
+                       difftime(date,first_rate_i,units="days")>1280 & difftime(date,first_rate_i,units="days")<=1465 ~ 8,
+                       difftime(date,first_rate_i,units="days")>1465 & difftime(date,first_rate_i,units="days")<=1645 ~ 9,
+                       difftime(date,first_rate_i,units="days")>1645~10)
+  )  %>%
+  left_join(user_avgs_reg, by='userId')%>%
+  left_join(movie_avgs_reg_bin, by=c('movieId','bin'))%>%
   mutate(dev_u_t=as.numeric(difftime(date,t_u,units="days"))) %>%
   mutate(dev_u_t=a*sign(dev_u_t)*(abs(dev_u_t)^b)) %>%
-  mutate(pred = mu + b_i_reg + b_u_reg +dev_u_t) %>%
+  mutate(pred = mu + b_i_reg + b_u_reg + ifelse(is.na(b_i),0,b_i)+dev_u_t) %>%         
   pull(pred)
 usertimebias_rmse<-RMSE(predicted_ratings, test_set$rating)
 usertimebias_mae<-MAE(predicted_ratings, test_set$rating)
 
 ## Save results to table
-Results<-rbind(Results,tibble(method = "Movie Bias reg + User bias reg + dev_u(t)", RMSE = usertimebias_rmse,MAE = usertimebias_mae))
-
-
-################## 4.2 Adding movie rating date bias  
-
-date_avgs <- train_set %>% mutate(date = round_date(date, unit = "day")) %>%
-  left_join(movie_avgs_reg, by='movieId') %>%
-  left_join(user_avgs_reg, by='userId') %>%
-  mutate(dev_u_t=as.numeric(difftime(date,t_u,units="days"))) %>%
-  mutate(dev_u_t=a*sign(dev_u_t)*(abs(dev_u_t)^b)) %>%
-  group_by(date) %>%
-  summarize(b_d = mean(rating - mu - b_i_reg - b_u_reg - dev_u_t))
-
-qplot(b_d, data = date_avgs, bins = 10, color = I("black"))   ## distributed all around 0, it seems not to add anything
-
-predicted_ratings <- test_set%>% mutate(date = round_date(date, unit = "day")) %>%
-  left_join(movie_avgs_reg, by='movieId') %>%
-  left_join(user_avgs_reg, by='userId') %>%
-  mutate(dev_u_t=as.numeric(difftime(date,t_u,units="days"))) %>%
-  mutate(dev_u_t=a*sign(dev_u_t)*(abs(dev_u_t)^b)) %>%
-  left_join(date_avgs, by='date') %>%
-  mutate(pred = mu + b_i_reg + b_u_reg +dev_u_t+b_d) %>%
-  pull(pred)
-movusertimebias_rmse<-RMSE(predicted_ratings, test_set$rating)
-movusertimebias_mae<-MAE(predicted_ratings, test_set$rating)
-
-## Save results to table
-Results<-rbind(Results,tibble(method = "Movie Bias reg + User bias reg + dev_u(t) + rating day bias", RMSE = movusertimebias_rmse,MAE = movusertimebias_mae))
-
-
-
+Results<-rbind(Results,tibble(method = "Movie Bias reg + User bias reg+ time effect on movie Bias reg + dev_u(t)", RMSE = usertimebias_rmse,MAE = usertimebias_mae))
 
 
 
