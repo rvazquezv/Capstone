@@ -277,8 +277,6 @@ rm(dl, ratings, movies, test_index, temp, movielens, removed)
 
 
 ```
-
-
 \newpage  
 
 ## Exploratory Analysis
@@ -296,7 +294,7 @@ summary(edx)
 
 It can be observed that edx dataset is a data.frame containing `r format(nrow(edx),big.mark=",",scientific=F)` rows and `r format(ncol(edx),big.mark=",",scientific=F)` columns, with ratings provided by a total of `r format(n_distinct(edx$userId), big.mark=",",scientific=F)` different users (that I will refer as "u"s) for a total of `r format(n_distinct(edx$movieId),big.mark=",",scientific=F)` different movies (that I will refer as "i"s). Generally speaking cartesian product of these two sets would consist on about `r round((n_distinct(edx$userId)*n_distinct(edx$movieId))/1e+06)` million ratings. Hence, it is definetively proved that not every user has rated every movie.
 
-Clearly,there are more pieces of information than the movie, the user, and the ratings. There are three columns more including the timestamp (date of the rating done by user u on movie i), the title (a character vector including the release year at the end of the string) and finally a segmentation of the movie by genre (actually, each movie can be included in more than one cathegory)
+Clearly,there are more pieces of information than the movie, the user, and the ratings. There are three columns more including the timestamp (date of the rating done by user u on movie i), the title (a character vector including the title and the release year of the movie at the end of the string) and finally a segmentation of the movie by genre (actually, each movie can be included in more than one cathegory)
 
 Taking a look at previous information and at the distribution of the ratings
 
@@ -568,9 +566,7 @@ Results
 
 The same as movie bias regularization, user bias regularization does not seem to improve too much, but at least improves a little bit so I also decided to keep it as part of my model.
 
-Following recommendations made by The “BellKor’s Pragmatic Chaos” final solution, the users tend to change their baseline ratings over time including a natural drift in a user’s rating scale, and moreover, item’s popularity may also change over time.
-
-These effects can be observed on the next plots
+The paper made by the “BellKor’s Pragmatic Chaos” final solution states that the users tend to change their baseline ratings over time including a natural drift in a user’s rating scale, and besides, item’s popularity may also change over time. I agree on these assumptions as some of these time effects can be observed on the next plots
 
 ```{r Baseline reflexion on time effect, message=FALSE}
 
@@ -598,14 +594,14 @@ so following their path I have built first of all time bias $b_{i}$ and secondly
 They decided to split the item biases into time-based bins, using a constant item bias for each time period:
 $$b_{i}(t) = bi +b_{i,Bin(t)}$$
 
-In their paper they state that to choose the bins they have considered periods of time of around thirty weeks, so based on this approach and in ordet to simplify things I split bins in around half a year each. To be completely right those decisions should also be optimized, but due to the computational time taken and small profit obtained I decided to keep this arbitrary ones
+In their paper they state that to choose the bins they have considered periods of time of around thirty weeks, so based on this approach and in order to simplify things I split bins in around half a year each. To be completely right those decisions should also be optimized, but due to the computational time taken and small profit obtained I decided to keep this arbitrary ones
 
 
-and to calcuate user biases as a function of time they used the next function:
+and to calculate user biases as a function of time they used the next function:
 $$dev_{u}(t)=α_{u}·sign(t −t_{u})·|t −t_{u}|^\beta$$
-where α and β are determined by validation on the test set. In this case I took the same β referred in the paper and then tried to optimize them via dev1 and dev2 functions
+where α and β are determined by validation on the test set. In this case I took the same β referred in the paper and then tried to optimize α and β via dev1 and dev2 functions
 
-And this is exactly why I also tried.
+Next pieces of code show these attempts
 
 
 ```{r Baseline  4.1  movie rating date bias , message=FALSE}
@@ -654,7 +650,7 @@ movbiasregbin_mae<-MAE(predicted_ratings, test_set$rating)
 
 
 ## Save results to table
-Results<-rbind(Results,tibble(method = "Movie Bias reg + User bias reg+ time effect on movie Bias reg", RMSE = movbiasregbin_rmse, MAE = movbiasregbin_mae))
+Results<-rbind(Results,tibble(method = "Movie Bias reg + User bias reg+ time effect ", RMSE = movbiasregbin_rmse, MAE = movbiasregbin_mae))
 Results
 ```
 
@@ -662,10 +658,6 @@ Indeed this time effect is allowing to improve a little bit also
 
 
 ```{r Baseline  4.2  user rating date bias , message=FALSE}
-## Save results to table
-Results<-rbind(Results,tibble(method = "Movie Bias reg + User bias reg+ time effect on movie Bias reg", RMSE = movbiasregbin_rmse, MAE = movbiasregbin_mae))
-
-
 ################## 4.2 Adding user rating date bias  
 
 ##
@@ -709,9 +701,11 @@ usertimebias_rmse<-RMSE(predicted_ratings, test_set$rating)
 usertimebias_mae<-MAE(predicted_ratings, test_set$rating)
 
 ## Save results to table
-Results<-rbind(Results,tibble(method = "Movie Bias reg + User bias reg+ time effect on movie Bias reg + dev_u(t)", RMSE = usertimebias_rmse,MAE = usertimebias_mae))
+Results<-rbind(Results,tibble(method = "Movie Bias reg + User bias reg+ time effect + dev_u(t)", RMSE = usertimebias_rmse,MAE = usertimebias_mae))
 Results
 
 ```
 
-Comparing Figure 4, Figure 5 and Figure 8 and also RMSE and MAE calculated for each of those process it is possible to have a slight idea of the influence of each of those bias on final predictions. .  
+
+
+Comparing Figure 4, Figure 5 and Figure 8 and also RMSE and MAE calculated for each of those process it is possible to have a lazy idea of the influence of each of those bias on final predictions. .  
