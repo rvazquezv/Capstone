@@ -96,16 +96,16 @@ dev1<-function(a){
   movie_avgs_reg_bin<-train_set %>% 
     left_join(movie_avgs_reg, by='movieId') %>%
     left_join(date_user_avgs_reg, by='userId')  %>%
-    mutate(bin=case_when(difftime(date,first_rate_i,units="days")<=180 ~ 1,
-                         difftime(date,first_rate_i,units="days")>180 & difftime(date,first_rate_i,units="days")<=365 ~ 2,
-                         difftime(date,first_rate_i,units="days")>365 & difftime(date,first_rate_i,units="days")<=545 ~ 3,
-                         difftime(date,first_rate_i,units="days")>545 & difftime(date,first_rate_i,units="days")<=730 ~ 4,
-                         difftime(date,first_rate_i,units="days")>730 & difftime(date,first_rate_i,units="days")<=915 ~ 5,
-                         difftime(date,first_rate_i,units="days")>915 & difftime(date,first_rate_i,units="days")<=1095 ~ 6,
-                         difftime(date,first_rate_i,units="days")>1095 & difftime(date,first_rate_i,units="days")<=1280 ~ 7,
-                         difftime(date,first_rate_i,units="days")>1280 & difftime(date,first_rate_i,units="days")<=1465 ~ 8,
-                         difftime(date,first_rate_i,units="days")>1465 & difftime(date,first_rate_i,units="days")<=1645 ~ 9,
-                         difftime(date,first_rate_i,units="days")>1645~10)
+    mutate(bin=case_when(difftime(date,first_rate_i,units="days")<=730 ~ 1,
+                         difftime(date,first_rate_i,units="days")>730 & difftime(date,first_rate_i,units="days")<=1460 ~ 2,
+                         difftime(date,first_rate_i,units="days")>1460 & difftime(date,first_rate_i,units="days")<=2190 ~ 3,
+                         difftime(date,first_rate_i,units="days")>2190 & difftime(date,first_rate_i,units="days")<=2920 ~ 4,
+                         difftime(date,first_rate_i,units="days")>2920 & difftime(date,first_rate_i,units="days")<=3650 ~ 5,
+                         difftime(date,first_rate_i,units="days")>3650 & difftime(date,first_rate_i,units="days")<=4380 ~ 6,
+                         difftime(date,first_rate_i,units="days")>4380 & difftime(date,first_rate_i,units="days")<=5110 ~ 7,
+                         difftime(date,first_rate_i,units="days")>5110 & difftime(date,first_rate_i,units="days")<=5840 ~ 8,
+                         difftime(date,first_rate_i,units="days")>5840 & difftime(date,first_rate_i,units="days")<=6570 ~ 9,
+                         difftime(date,first_rate_i,units="days")>6570~10)
     )%>%
     group_by(movieId,bin) %>% 
     summarize(b_i = mean(rating - mu - b_i_reg - b_u_reg))
@@ -113,16 +113,16 @@ dev1<-function(a){
   
   predicted_ratings <- test_set %>% 
     left_join(movie_avgs_reg, by='movieId') %>%
-    mutate(bin=case_when(difftime(date,first_rate_i,units="days")<=180 ~ 1,
-                         difftime(date,first_rate_i,units="days")>180 & difftime(date,first_rate_i,units="days")<=365 ~ 2,
-                         difftime(date,first_rate_i,units="days")>365 & difftime(date,first_rate_i,units="days")<=545 ~ 3,
-                         difftime(date,first_rate_i,units="days")>545 & difftime(date,first_rate_i,units="days")<=730 ~ 4,
-                         difftime(date,first_rate_i,units="days")>730 & difftime(date,first_rate_i,units="days")<=915 ~ 5,
-                         difftime(date,first_rate_i,units="days")>915 & difftime(date,first_rate_i,units="days")<=1095 ~ 6,
-                         difftime(date,first_rate_i,units="days")>1095 & difftime(date,first_rate_i,units="days")<=1280 ~ 7,
-                         difftime(date,first_rate_i,units="days")>1280 & difftime(date,first_rate_i,units="days")<=1465 ~ 8,
-                         difftime(date,first_rate_i,units="days")>1465 & difftime(date,first_rate_i,units="days")<=1645 ~ 9,
-                         difftime(date,first_rate_i,units="days")>1645~10)
+    mutate(bin=case_when(difftime(date,first_rate_i,units="days")<=730 ~ 1,
+                         difftime(date,first_rate_i,units="days")>730 & difftime(date,first_rate_i,units="days")<=1460 ~ 2,
+                         difftime(date,first_rate_i,units="days")>1460 & difftime(date,first_rate_i,units="days")<=2190 ~ 3,
+                         difftime(date,first_rate_i,units="days")>2190 & difftime(date,first_rate_i,units="days")<=2920 ~ 4,
+                         difftime(date,first_rate_i,units="days")>2920 & difftime(date,first_rate_i,units="days")<=3650 ~ 5,
+                         difftime(date,first_rate_i,units="days")>3650 & difftime(date,first_rate_i,units="days")<=4380 ~ 6,
+                         difftime(date,first_rate_i,units="days")>4380 & difftime(date,first_rate_i,units="days")<=5110 ~ 7,
+                         difftime(date,first_rate_i,units="days")>5110 & difftime(date,first_rate_i,units="days")<=5840 ~ 8,
+                         difftime(date,first_rate_i,units="days")>5840 & difftime(date,first_rate_i,units="days")<=6570 ~ 9,
+                         difftime(date,first_rate_i,units="days")>6570~10)
     )  %>%
     left_join(date_user_avgs_reg, by='userId')%>%
     left_join(movie_avgs_reg_bin, by=c('movieId','bin'))%>%
@@ -148,16 +148,16 @@ dev2<-function(b){
   movie_avgs_reg_bin<-train_set %>% 
     left_join(movie_avgs_reg, by='movieId') %>%
     left_join(user_avgs_reg, by='userId')  %>%
-    mutate(bin=case_when(difftime(date,first_rate_i,units="days")<=180 ~ 1,
-                         difftime(date,first_rate_i,units="days")>180 & difftime(date,first_rate_i,units="days")<=365 ~ 2,
-                         difftime(date,first_rate_i,units="days")>365 & difftime(date,first_rate_i,units="days")<=545 ~ 3,
-                         difftime(date,first_rate_i,units="days")>545 & difftime(date,first_rate_i,units="days")<=730 ~ 4,
-                         difftime(date,first_rate_i,units="days")>730 & difftime(date,first_rate_i,units="days")<=915 ~ 5,
-                         difftime(date,first_rate_i,units="days")>915 & difftime(date,first_rate_i,units="days")<=1095 ~ 6,
-                         difftime(date,first_rate_i,units="days")>1095 & difftime(date,first_rate_i,units="days")<=1280 ~ 7,
-                         difftime(date,first_rate_i,units="days")>1280 & difftime(date,first_rate_i,units="days")<=1465 ~ 8,
-                         difftime(date,first_rate_i,units="days")>1465 & difftime(date,first_rate_i,units="days")<=1645 ~ 9,
-                         difftime(date,first_rate_i,units="days")>1645~10)
+    mutate(bin=case_when(difftime(date,first_rate_i,units="days")<=730 ~ 1,
+                         difftime(date,first_rate_i,units="days")>730 & difftime(date,first_rate_i,units="days")<=1460 ~ 2,
+                         difftime(date,first_rate_i,units="days")>1460 & difftime(date,first_rate_i,units="days")<=2190 ~ 3,
+                         difftime(date,first_rate_i,units="days")>2190 & difftime(date,first_rate_i,units="days")<=2920 ~ 4,
+                         difftime(date,first_rate_i,units="days")>2920 & difftime(date,first_rate_i,units="days")<=3650 ~ 5,
+                         difftime(date,first_rate_i,units="days")>3650 & difftime(date,first_rate_i,units="days")<=4380 ~ 6,
+                         difftime(date,first_rate_i,units="days")>4380 & difftime(date,first_rate_i,units="days")<=5110 ~ 7,
+                         difftime(date,first_rate_i,units="days")>5110 & difftime(date,first_rate_i,units="days")<=5840 ~ 8,
+                         difftime(date,first_rate_i,units="days")>5840 & difftime(date,first_rate_i,units="days")<=6570 ~ 9,
+                         difftime(date,first_rate_i,units="days")>6570~10)
     )%>%
     group_by(movieId,bin) %>% 
     summarize(b_i = mean(rating - mu - b_i_reg - b_u_reg))
@@ -165,16 +165,16 @@ dev2<-function(b){
   
   predicted_ratings <- test_set %>% 
     left_join(movie_avgs_reg, by='movieId') %>%
-    mutate(bin=case_when(difftime(date,first_rate_i,units="days")<=180 ~ 1,
-                         difftime(date,first_rate_i,units="days")>180 & difftime(date,first_rate_i,units="days")<=365 ~ 2,
-                         difftime(date,first_rate_i,units="days")>365 & difftime(date,first_rate_i,units="days")<=545 ~ 3,
-                         difftime(date,first_rate_i,units="days")>545 & difftime(date,first_rate_i,units="days")<=730 ~ 4,
-                         difftime(date,first_rate_i,units="days")>730 & difftime(date,first_rate_i,units="days")<=915 ~ 5,
-                         difftime(date,first_rate_i,units="days")>915 & difftime(date,first_rate_i,units="days")<=1095 ~ 6,
-                         difftime(date,first_rate_i,units="days")>1095 & difftime(date,first_rate_i,units="days")<=1280 ~ 7,
-                         difftime(date,first_rate_i,units="days")>1280 & difftime(date,first_rate_i,units="days")<=1465 ~ 8,
-                         difftime(date,first_rate_i,units="days")>1465 & difftime(date,first_rate_i,units="days")<=1645 ~ 9,
-                         difftime(date,first_rate_i,units="days")>1645~10)
+    mutate(bin=case_when(difftime(date,first_rate_i,units="days")<=730 ~ 1,
+                         difftime(date,first_rate_i,units="days")>730 & difftime(date,first_rate_i,units="days")<=1460 ~ 2,
+                         difftime(date,first_rate_i,units="days")>1460 & difftime(date,first_rate_i,units="days")<=2190 ~ 3,
+                         difftime(date,first_rate_i,units="days")>2190 & difftime(date,first_rate_i,units="days")<=2920 ~ 4,
+                         difftime(date,first_rate_i,units="days")>2920 & difftime(date,first_rate_i,units="days")<=3650 ~ 5,
+                         difftime(date,first_rate_i,units="days")>3650 & difftime(date,first_rate_i,units="days")<=4380 ~ 6,
+                         difftime(date,first_rate_i,units="days")>4380 & difftime(date,first_rate_i,units="days")<=5110 ~ 7,
+                         difftime(date,first_rate_i,units="days")>5110 & difftime(date,first_rate_i,units="days")<=5840 ~ 8,
+                         difftime(date,first_rate_i,units="days")>5840 & difftime(date,first_rate_i,units="days")<=6570 ~ 9,
+                         difftime(date,first_rate_i,units="days")>6570~10)
     )  %>%
     left_join(date_user_avgs_reg, by='userId')%>%
     left_join(movie_avgs_reg_bin, by=c('movieId','bin'))%>%
@@ -341,16 +341,16 @@ Results<-rbind(Results,tibble(method = "Movie Bias reg + User bias reg", RMSE = 
 movie_avgs_reg_bin<-train_set %>% 
   left_join(movie_avgs_reg, by='movieId') %>%
   left_join(user_avgs_reg, by='userId')  %>%
-  mutate(bin=case_when(difftime(date,first_rate_i,units="days")<=180 ~ 1,
-                       difftime(date,first_rate_i,units="days")>180 & difftime(date,first_rate_i,units="days")<=365 ~ 2,
-                       difftime(date,first_rate_i,units="days")>365 & difftime(date,first_rate_i,units="days")<=545 ~ 3,
-                       difftime(date,first_rate_i,units="days")>545 & difftime(date,first_rate_i,units="days")<=730 ~ 4,
-                       difftime(date,first_rate_i,units="days")>730 & difftime(date,first_rate_i,units="days")<=915 ~ 5,
-                       difftime(date,first_rate_i,units="days")>915 & difftime(date,first_rate_i,units="days")<=1095 ~ 6,
-                       difftime(date,first_rate_i,units="days")>1095 & difftime(date,first_rate_i,units="days")<=1280 ~ 7,
-                       difftime(date,first_rate_i,units="days")>1280 & difftime(date,first_rate_i,units="days")<=1465 ~ 8,
-                       difftime(date,first_rate_i,units="days")>1465 & difftime(date,first_rate_i,units="days")<=1645 ~ 9,
-                       difftime(date,first_rate_i,units="days")>1645~10)
+  mutate(bin=case_when(difftime(date,first_rate_i,units="days")<=730 ~ 1,
+                       difftime(date,first_rate_i,units="days")>730 & difftime(date,first_rate_i,units="days")<=1460 ~ 2,
+                       difftime(date,first_rate_i,units="days")>1460 & difftime(date,first_rate_i,units="days")<=2190 ~ 3,
+                       difftime(date,first_rate_i,units="days")>2190 & difftime(date,first_rate_i,units="days")<=2920 ~ 4,
+                       difftime(date,first_rate_i,units="days")>2920 & difftime(date,first_rate_i,units="days")<=3650 ~ 5,
+                       difftime(date,first_rate_i,units="days")>3650 & difftime(date,first_rate_i,units="days")<=4380 ~ 6,
+                       difftime(date,first_rate_i,units="days")>4380 & difftime(date,first_rate_i,units="days")<=5110 ~ 7,
+                       difftime(date,first_rate_i,units="days")>5110 & difftime(date,first_rate_i,units="days")<=5840 ~ 8,
+                       difftime(date,first_rate_i,units="days")>5840 & difftime(date,first_rate_i,units="days")<=6570 ~ 9,
+                       difftime(date,first_rate_i,units="days")>6570~10)
   )%>%
   group_by(movieId,bin) %>% 
   summarize(b_i = mean(rating - mu - b_i_reg - b_u_reg))
@@ -359,16 +359,16 @@ qplot(b_i, data = movie_avgs_reg_bin, bins = 10, color = I("black"))
 
 predicted_ratings <- test_set %>% 
   left_join(movie_avgs_reg, by='movieId') %>%
-  mutate(bin=case_when(difftime(date,first_rate_i,units="days")<=180 ~ 1,
-                       difftime(date,first_rate_i,units="days")>180 & difftime(date,first_rate_i,units="days")<=365 ~ 2,
-                       difftime(date,first_rate_i,units="days")>365 & difftime(date,first_rate_i,units="days")<=545 ~ 3,
-                       difftime(date,first_rate_i,units="days")>545 & difftime(date,first_rate_i,units="days")<=730 ~ 4,
-                       difftime(date,first_rate_i,units="days")>730 & difftime(date,first_rate_i,units="days")<=915 ~ 5,
-                       difftime(date,first_rate_i,units="days")>915 & difftime(date,first_rate_i,units="days")<=1095 ~ 6,
-                       difftime(date,first_rate_i,units="days")>1095 & difftime(date,first_rate_i,units="days")<=1280 ~ 7,
-                       difftime(date,first_rate_i,units="days")>1280 & difftime(date,first_rate_i,units="days")<=1465 ~ 8,
-                       difftime(date,first_rate_i,units="days")>1465 & difftime(date,first_rate_i,units="days")<=1645 ~ 9,
-                       difftime(date,first_rate_i,units="days")>1645~10)
+  mutate(bin=case_when(difftime(date,first_rate_i,units="days")<=730 ~ 1,
+                       difftime(date,first_rate_i,units="days")>730 & difftime(date,first_rate_i,units="days")<=1460 ~ 2,
+                       difftime(date,first_rate_i,units="days")>1460 & difftime(date,first_rate_i,units="days")<=2190 ~ 3,
+                       difftime(date,first_rate_i,units="days")>2190 & difftime(date,first_rate_i,units="days")<=2920 ~ 4,
+                       difftime(date,first_rate_i,units="days")>2920 & difftime(date,first_rate_i,units="days")<=3650 ~ 5,
+                       difftime(date,first_rate_i,units="days")>3650 & difftime(date,first_rate_i,units="days")<=4380 ~ 6,
+                       difftime(date,first_rate_i,units="days")>4380 & difftime(date,first_rate_i,units="days")<=5110 ~ 7,
+                       difftime(date,first_rate_i,units="days")>5110 & difftime(date,first_rate_i,units="days")<=5840 ~ 8,
+                       difftime(date,first_rate_i,units="days")>5840 & difftime(date,first_rate_i,units="days")<=6570 ~ 9,
+                       difftime(date,first_rate_i,units="days")>6570~10)
   )  %>%
   left_join(user_avgs_reg, by='userId')%>%
   left_join(movie_avgs_reg_bin, by=c('movieId','bin'))%>%
@@ -390,9 +390,10 @@ Results<-rbind(Results,tibble(method = "Movie Bias reg + User bias reg+ time eff
 ## a natural drift in a user’s rating scale, so we build user bias bu as a function of time dev_u(t) = α·sign(t −tu)·|t −tu|^β
 ## α,β are determined by validation on the test set
 
-a<- seq(-0.0015,0.0005,0.00025)
+a<- seq(-0.0015,-0.0015,0.00025)
 b<-0.4                               # initial β proposed in The BellKor Solution paper
 devut<-sapply(a,dev1)
+plot(a,devut)
 a<-a[which.min(devut)]
 a
 
@@ -405,17 +406,16 @@ b
 ## We took advantage of user_avgs_reg not only for calculating b_u_reg but also t_u, so we do not need to calculate it here
 predicted_ratings <- test_set %>% 
   left_join(movie_avgs_reg, by='movieId') %>%
-  mutate(bin=case_when(difftime(date,first_rate_i,units="days")<=180 ~ 1,
-                       difftime(date,first_rate_i,units="days")>180 & difftime(date,first_rate_i,units="days")<=365 ~ 2,
-                       difftime(date,first_rate_i,units="days")>365 & difftime(date,first_rate_i,units="days")<=545 ~ 3,
-                       difftime(date,first_rate_i,units="days")>545 & difftime(date,first_rate_i,units="days")<=730 ~ 4,
-                       difftime(date,first_rate_i,units="days")>730 & difftime(date,first_rate_i,units="days")<=915 ~ 5,
-                       difftime(date,first_rate_i,units="days")>915 & difftime(date,first_rate_i,units="days")<=1095 ~ 6,
-                       difftime(date,first_rate_i,units="days")>1095 & difftime(date,first_rate_i,units="days")<=1280 ~ 7,
-                       difftime(date,first_rate_i,units="days")>1280 & difftime(date,first_rate_i,units="days")<=1465 ~ 8,
-                       difftime(date,first_rate_i,units="days")>1465 & difftime(date,first_rate_i,units="days")<=1645 ~ 9,
-                       difftime(date,first_rate_i,units="days")>1645~10)
-  )  %>%
+  mutate(bin=case_when(difftime(date,first_rate_i,units="days")<=730 ~ 1,
+                       difftime(date,first_rate_i,units="days")>730 & difftime(date,first_rate_i,units="days")<=1460 ~ 2,
+                       difftime(date,first_rate_i,units="days")>1460 & difftime(date,first_rate_i,units="days")<=2190 ~ 3,
+                       difftime(date,first_rate_i,units="days")>2190 & difftime(date,first_rate_i,units="days")<=2920 ~ 4,
+                       difftime(date,first_rate_i,units="days")>2920 & difftime(date,first_rate_i,units="days")<=3650 ~ 5,
+                       difftime(date,first_rate_i,units="days")>3650 & difftime(date,first_rate_i,units="days")<=4380 ~ 6,
+                       difftime(date,first_rate_i,units="days")>4380 & difftime(date,first_rate_i,units="days")<=5110 ~ 7,
+                       difftime(date,first_rate_i,units="days")>5110 & difftime(date,first_rate_i,units="days")<=5840 ~ 8,
+                       difftime(date,first_rate_i,units="days")>5840 & difftime(date,first_rate_i,units="days")<=6570 ~ 9,
+                       difftime(date,first_rate_i,units="days")>6570~10) )  %>%
   left_join(user_avgs_reg, by='userId')%>%
   left_join(movie_avgs_reg_bin, by=c('movieId','bin'))%>%
   mutate(dev_u_t=as.numeric(difftime(date,t_u,units="days"))) %>%
