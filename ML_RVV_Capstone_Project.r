@@ -18,7 +18,7 @@ l1<-2.75
 l2<-5
 a<- -0.00075
 b<- 0.4
-n<-730
+n<-780
 
 ##############################################################################
 ###############################################################################
@@ -199,6 +199,12 @@ library(RColorBrewer)
 ## Release Year is included in the title, adding a column with the year
 
 edx<-edx %>% mutate( date = as_datetime(timestamp),year=as.numeric(str_extract(str_extract(substrRight(title,6),"\\([^()]+.\\d"),"\\d+\\d")))
+
+
+## Extracting different existing genres
+all_genres<-edx  %>% select(genres) %>% group_by(genres) %>% summarize(n=n())  %>% pull(genres)
+all_genres<-enframe(str_split(all_genres, pattern="\\|")) %>% unnest(value) %>% group_by(value) %>% summarize(n=n())
+all_genres<-all_genres %>% mutate(genre=value) %>% select(genre)
 
 
 
