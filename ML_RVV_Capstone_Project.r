@@ -43,11 +43,16 @@ MAE <- function(true, predicted){
 }
 
 
-
-
 ## substrRight function to substract n last characters on a string
 substrRight <- function(x, n){
   substr(x, nchar(x)-n+1, nchar(x))
+}
+
+
+##rating_stats_by genre function to calculate statistics on a data frame df by genre s
+rating_stats_bygenre<-function(df,s){
+  aux<- df  %>% filter(genres %like% s) %>%  summarize(mu=mean(rating),sigma=sd(rating))
+  tibble(genre=s,mu=aux$mu,sigma=aux$sigma)  
 }
 
 
@@ -434,6 +439,15 @@ Results<-rbind(Results,tibble(method = "Movie Bias reg + User bias reg+ time eff
 
 
 ################## 5.Adding genre bias  (it seems to tend to 0) 
+
+
+## Let's start by calculating average rating by genre
+all_genres_stats<-tibble(.rows = NULL)
+for(i in (1:length(all_genres$genre))){
+  all_genres_stats<-rbind.data.frame(all_genres_stats,rating_stats_bygenre(edx,all_genres$genre[i]))
+}
+
+
 
 genre_avgs <- train_set %>% 
   left_join(movie_avgs, by='movieId') %>%
