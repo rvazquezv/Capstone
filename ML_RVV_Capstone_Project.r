@@ -447,6 +447,14 @@ for(i in (1:length(all_genres$genre))){
   all_genres_stats<-rbind.data.frame(all_genres_stats,rating_stats_bygenre(edx,all_genres$genre[i]))
 }
 
+all_genres_stats %>% ggplot(aes(x=genre,y=mu)) +
+  geom_point() +
+  ylab("Average Ratings over general average") +
+  geom_errorbar(aes(ymin=mu-sigma, ymax=mu+sigma,col=genre)) +
+  geom_hline(yintercept=mu)+
+  theme(axis.title.x=element_blank(),
+        axis.text.x=element_blank(),
+        axis.ticks.x=element_blank())
 
 
 genre_avgs <- train_set %>% 
