@@ -51,8 +51,8 @@ substrRight <- function(x, n){
 
 ## rating_stats_bygenre function to calculate statistics on a data frame df by genre s
 rating_stats_bygenre<-function(df,avg,s){
-  aux<- df  %>% filter(genres %like% s) %>%  summarize(mu=mean(rating),sigma=sd(rating))
-  tibble(genre=s,mu=aux$mu,sigma=aux$sigma,b_g=aux$mu-avg)  
+  aux<- df  %>% filter(genres %like% s) %>%  summarize(n=n(),mu=mean(rating),sigma=sd(rating))
+  tibble(genre=s,n=aux$n,mu=aux$mu,sigma=aux$sigma,b_g=aux$mu-avg)  
 }
 
 
@@ -214,13 +214,6 @@ edx<-edx %>% mutate( date = as_datetime(timestamp),year=as.numeric(str_extract(s
 
 ## Adding a column b_g, initialized to 0 that will contain Σ(b_g), the sum of all genre bias that each movie belongs to
 edx<-edx %>% mutate(sum_b_g=0)
-
-
-## Extracting different existing genres
-all_genres<-edx  %>% select(genres) %>% group_by(genres) %>% summarize(n=n())  %>% pull(genres)
-all_genres<-enframe(str_split(all_genres, pattern="\\|")) %>% unnest(value) %>% group_by(value) %>% summarize(n=n())
-all_genres<-all_genres %>% mutate(genre=value) %>% select(genre)
-
 
 
 ## Selecting a random seed to allow replicability
@@ -450,11 +443,16 @@ Results<-rbind(Results,tibble(method = "Movie Bias reg + User bias reg+ time eff
 
 ################## 5.Adding genre bias  (it seems to tend to 0) 
 
+## Extracting different existing genres
+all_genres<-train_set  %>% select(genres) %>% group_by(genres) %>% summarize(n=n())  %>% pull(genres)
+all_genres<-enframe(str_split(all_genres, pattern="\\|")) %>% unnest(value) %>% group_by(value) %>% summarize(n=n())
+all_genres<-all_genres %>% mutate(genre=value) %>% select(genre)
+
 
 ## Let's start by calculating average rating by genre and genre bias b_g
 all_genres_stats<-tibble(.rows = NULL)
 for(i in (1:length(all_genres$genre))){
-  all_genres_stats<-rbind.data.frame(all_genres_stats,rating_stats_bygenre(edx,mu,all_genres$genre[i]))
+  all_genres_stats<-rbind.data.frame(all_genres_stats,rating_stats_bygenre(train_set,mu,all_genres$genre[i]))
 }
 
 all_genres_stats %>% ggplot(aes(x=genre,y=mu)) +
@@ -465,12 +463,14 @@ all_genres_stats %>% ggplot(aes(x=genre,y=mu)) +
   theme(axis.text.x=element_blank(),
         axis.ticks.x=element_blank())
 
-## Let's now aggregate genre bias to edx dataset for Crime, Comedy and Romance genres
-edx<-agg_sum_b_g(edx,"Crime")
-edx<-agg_sum_b_g(edx,"Comedy")
-edx<-agg_sum_b_g(edx,"Romance")
+## Let's now aggregate genre bias to test_set dataset for each genre present in all_genres
+aux<-test_set
 
+for(i in (1:length(all_genres$genre))){
+  aux<-agg_sum_b_g(aux,all_genres$genre[i])
+}
 
+## After applying sum_b_g RMSE worsens to 0.8858632,it seems clear to find out coefficients to apply to each genre
 
 genre_avgs <- train_set %>% 
   left_join(movie_avgs, by='movieId') %>%
