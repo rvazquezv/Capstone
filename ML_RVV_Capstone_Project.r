@@ -49,10 +49,17 @@ substrRight <- function(x, n){
 }
 
 
-##rating_stats_by genre function to calculate statistics on a data frame df by genre s
+## rating_stats_bygenre function to calculate statistics on a data frame df by genre s
 rating_stats_bygenre<-function(df,avg,s){
   aux<- df  %>% filter(genres %like% s) %>%  summarize(mu=mean(rating),sigma=sd(rating))
   tibble(genre=s,mu=aux$mu,sigma=aux$sigma,b_g=aux$mu-avg)  
+}
+
+
+## agg_sum_b_g to aggregate genre bias on genre g for those movies belonging to more than one genre
+agg_sum_b_g<-function(df,g){
+  auxdf<- df  %>% filter(genres %like% g) %>% mutate(new_b_g=all_genres_stats$b_g[which(all_genres_stats$genre==g)]) %>% select(userId,movieId,new_b_g)
+  df<- left_join(df, auxdf, by = c("userId","movieId")) %>% mutate(sum_b_g=ifelse(is.na(new_b_g),sum_b_g,sum_b_g+new_b_g)) %>% select(-new_b_g)
 }
 
 
@@ -204,6 +211,9 @@ library(RColorBrewer)
 ## Release Year is included in the title, adding a column with the year
 
 edx<-edx %>% mutate( date = as_datetime(timestamp),year=as.numeric(str_extract(str_extract(substrRight(title,6),"\\([^()]+.\\d"),"\\d+\\d")))
+
+## Adding a column b_g, initialized to 0 that will contain Σ(b_g), the sum of all genre bias that each movie belongs to
+edx<-edx %>% mutate(sum_b_g=0)
 
 
 ## Extracting different existing genres
@@ -454,6 +464,12 @@ all_genres_stats %>% ggplot(aes(x=genre,y=mu)) +
   geom_hline(yintercept=mu)+
   theme(axis.text.x=element_blank(),
         axis.ticks.x=element_blank())
+
+## Let's now aggregate genre bias to edx dataset for Crime, Comedy and Romance genres
+edx<-agg_sum_b_g(edx,"Crime")
+edx<-agg_sum_b_g(edx,"Comedy")
+edx<-agg_sum_b_g(edx,"Romance")
+
 
 
 genre_avgs <- train_set %>% 
