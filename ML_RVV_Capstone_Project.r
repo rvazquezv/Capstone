@@ -50,9 +50,9 @@ substrRight <- function(x, n){
 
 
 ##rating_stats_by genre function to calculate statistics on a data frame df by genre s
-rating_stats_bygenre<-function(df,s){
+rating_stats_bygenre<-function(df,avg,s){
   aux<- df  %>% filter(genres %like% s) %>%  summarize(mu=mean(rating),sigma=sd(rating))
-  tibble(genre=s,mu=aux$mu,sigma=aux$sigma)  
+  tibble(genre=s,mu=aux$mu,sigma=aux$sigma,b_g=aux$mu-avg)  
 }
 
 
@@ -441,10 +441,10 @@ Results<-rbind(Results,tibble(method = "Movie Bias reg + User bias reg+ time eff
 ################## 5.Adding genre bias  (it seems to tend to 0) 
 
 
-## Let's start by calculating average rating by genre
+## Let's start by calculating average rating by genre and genre bias b_g
 all_genres_stats<-tibble(.rows = NULL)
 for(i in (1:length(all_genres$genre))){
-  all_genres_stats<-rbind.data.frame(all_genres_stats,rating_stats_bygenre(edx,all_genres$genre[i]))
+  all_genres_stats<-rbind.data.frame(all_genres_stats,rating_stats_bygenre(edx,mu,all_genres$genre[i]))
 }
 
 all_genres_stats %>% ggplot(aes(x=genre,y=mu)) +
@@ -452,8 +452,7 @@ all_genres_stats %>% ggplot(aes(x=genre,y=mu)) +
   ylab("Average Ratings over general average") +
   geom_errorbar(aes(ymin=mu-sigma, ymax=mu+sigma,col=genre)) +
   geom_hline(yintercept=mu)+
-  theme(axis.title.x=element_blank(),
-        axis.text.x=element_blank(),
+  theme(axis.text.x=element_blank(),
         axis.ticks.x=element_blank())
 
 
