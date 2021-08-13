@@ -51,8 +51,9 @@ substrRight <- function(x, n){
 
 ## rating_stats_bygenre function to calculate statistics on a data frame df by genre s
 rating_stats_bygenre<-function(df,avg,s){
-  aux<- df  %>% filter(genres %like% s) %>%  summarize(n=n(),mu=mean(rating),sigma=sd(rating))
-  tibble(genre=s,n=aux$n,mu=aux$mu,sigma=aux$sigma,b_g=aux$mu-avg)  
+  aux<- df  %>% filter(genres %like% s) %>%  summarize(n=n(),mu=mean(rating),sigma=sd(rating),
+                                                       b_g=mean(rating - avg - b_i_reg - b_u_reg - ifelse(is.na(b_i),0,b_i) - dev_u_t))
+  tibble(genre=s,n=aux$n,mu=aux$mu,sigma=aux$sigma,b_g=aux$b_g)  
 }
 
 
@@ -441,10 +442,28 @@ Results<-rbind(Results,tibble(method = "Movie Bias reg + User bias reg+ time eff
 
 
 
-################## 5.Adding genre bias  (it seems to tend to 0) 
+################## 5.Adding genre bias  
+genre_avgs<-  train_set %>% 
+  left_join(movie_avgs_reg, by='movieId') %>%
+  mutate(bin=case_when(difftime(date,first_rate_i,units="days")<=n ~ 1,
+                       difftime(date,first_rate_i,units="days")>n & difftime(date,first_rate_i,units="days")<=2*n ~ 2,
+                       difftime(date,first_rate_i,units="days")>2*n & difftime(date,first_rate_i,units="days")<=3*n ~ 3,
+                       difftime(date,first_rate_i,units="days")>3*n & difftime(date,first_rate_i,units="days")<=4*n ~ 4,
+                       difftime(date,first_rate_i,units="days")>4*n & difftime(date,first_rate_i,units="days")<=5*n ~ 5,
+                       difftime(date,first_rate_i,units="days")>5*n & difftime(date,first_rate_i,units="days")<=6*n ~ 6,
+                       difftime(date,first_rate_i,units="days")>6*n & difftime(date,first_rate_i,units="days")<=7*n ~ 7,
+                       difftime(date,first_rate_i,units="days")>7*n & difftime(date,first_rate_i,units="days")<=8*n ~ 8,
+                       difftime(date,first_rate_i,units="days")>8*n & difftime(date,first_rate_i,units="days")<=9*n ~ 9,
+                       difftime(date,first_rate_i,units="days")>9*n~10))  %>%
+  left_join(user_avgs_reg, by='userId')%>%
+  left_join(movie_avgs_reg_bin, by=c('movieId','bin'))%>%
+  mutate(dev_u_t=as.numeric(difftime(date,t_u,units="days"))) %>%
+  mutate(dev_u_t=a*sign(dev_u_t)*(abs(dev_u_t)^b))
+
+
 
 ## Extracting different existing genres
-all_genres<-train_set  %>% select(genres) %>% group_by(genres) %>% summarize(n=n())  %>% pull(genres)
+all_genres<-genre_avgs  %>% select(genres) %>% group_by(genres) %>% summarize(n=n())  %>% pull(genres)
 all_genres<-enframe(str_split(all_genres, pattern="\\|")) %>% unnest(value) %>% group_by(value) %>% summarize(n=n())
 all_genres<-all_genres %>% mutate(genre=value) %>% select(genre)
 
@@ -452,7 +471,7 @@ all_genres<-all_genres %>% mutate(genre=value) %>% select(genre)
 ## Let's start by calculating average rating by genre and genre bias b_g
 all_genres_stats<-tibble(.rows = NULL)
 for(i in (1:length(all_genres$genre))){
-  all_genres_stats<-rbind.data.frame(all_genres_stats,rating_stats_bygenre(train_set,mu,all_genres$genre[i]))
+  all_genres_stats<-rbind.data.frame(all_genres_stats,rating_stats_bygenre(genre_avgs,mu,all_genres$genre[i]))
 }
 
 all_genres_stats %>% ggplot(aes(x=genre,y=mu)) +
@@ -464,35 +483,34 @@ all_genres_stats %>% ggplot(aes(x=genre,y=mu)) +
         axis.ticks.x=element_blank())
 
 ## Let's now aggregate genre bias to test_set dataset for each genre present in all_genres
-aux<-test_set
 
 for(i in (1:length(all_genres$genre))){
-  aux<-agg_sum_b_g(aux,all_genres$genre[i])
+  test_set<-agg_sum_b_g(test_set,all_genres$genre[i])
 }
 
-## After applying sum_b_g RMSE worsens to 0.8858632,it seems clear to find out coefficients to apply to each genre
-
-genre_avgs <- train_set %>% 
-  left_join(movie_avgs, by='movieId') %>%
-  left_join(user_avgs, by='userId') %>%
-  group_by(genres) %>%
-  summarize(b_g = mean(rating - mu - b_i - b_u))
-
-qplot(b_g, data = genre_avgs, bins = 10, color = I("black"))    ## distributed all around 0, it seems not to add anything
-
-predicted_ratings <- test_set %>%  
-  left_join(movie_avgs, by='movieId') %>%
-  left_join(user_avgs, by='userId') %>%
-  left_join(genre_avgs, by='genres') %>%
-  mutate(pred = mu + b_i + b_u + b_g) %>%
+predicted_ratings <- test_set %>% 
+  left_join(movie_avgs_reg, by='movieId') %>%
+  mutate(bin=case_when(difftime(date,first_rate_i,units="days")<=n ~ 1,
+                       difftime(date,first_rate_i,units="days")>n & difftime(date,first_rate_i,units="days")<=2*n ~ 2,
+                       difftime(date,first_rate_i,units="days")>2*n & difftime(date,first_rate_i,units="days")<=3*n ~ 3,
+                       difftime(date,first_rate_i,units="days")>3*n & difftime(date,first_rate_i,units="days")<=4*n ~ 4,
+                       difftime(date,first_rate_i,units="days")>4*n & difftime(date,first_rate_i,units="days")<=5*n ~ 5,
+                       difftime(date,first_rate_i,units="days")>5*n & difftime(date,first_rate_i,units="days")<=6*n ~ 6,
+                       difftime(date,first_rate_i,units="days")>6*n & difftime(date,first_rate_i,units="days")<=7*n ~ 7,
+                       difftime(date,first_rate_i,units="days")>7*n & difftime(date,first_rate_i,units="days")<=8*n ~ 8,
+                       difftime(date,first_rate_i,units="days")>8*n & difftime(date,first_rate_i,units="days")<=9*n ~ 9,
+                       difftime(date,first_rate_i,units="days")>9*n~10))  %>%
+  left_join(user_avgs_reg, by='userId')%>%
+  left_join(movie_avgs_reg_bin, by=c('movieId','bin'))%>%
+  mutate(dev_u_t=as.numeric(difftime(date,t_u,units="days"))) %>%
+  mutate(dev_u_t=a*sign(dev_u_t)*(abs(dev_u_t)^b)) %>%
+  mutate(pred = mu + b_i_reg + b_u_reg + ifelse(is.na(b_i),0,b_i)+dev_u_t+sum_b_g) %>%         
   pull(pred)
 movusergenrebias_rmse<-RMSE(predicted_ratings, test_set$rating)
 movusergenrebias_mae<-MAE(predicted_ratings, test_set$rating)
 
 ## Save results to table
-rmse_results<-rbind(rmse_results,tibble(method = "Movie Bias + User bias + Genre bias", RMSE = movusergenrebias_rmse,MAE = movusergenrebias_mae))
-## Currently I have added b_d but I need to add f(b_g), so I need to find f !!!!!
-
+Results<-rbind(Results,tibble(method = "Movie Bias reg + User bias reg+ time effect on movie Bias reg + dev_u(t) + Genre bias", RMSE = movusergenrebias_rmse,MAE = movusergenrebias_mae))
 
 
 ################## 6.Adding bias  number of rates  --- tasks to be added 6.2 exam
