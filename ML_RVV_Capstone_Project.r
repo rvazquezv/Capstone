@@ -49,17 +49,16 @@ substrRight <- function(x, n){
 }
 
 
+
 ## rating_stats_bygenre function to calculate statistics on a data frame df by genre s
 rating_stats_bygenre<-function(df,avg,s){
-  aux<- df  %>% filter(genres %like% s) %>%  summarize(n=n(),mu=mean(rating),sigma=sd(rating),
-                                                       b_g=mean(rating - avg - b_i_reg - b_u_reg - ifelse(is.na(b_i),0,b_i) - dev_u_t))
+  aux<- df  %>% filter(grepl(s,genres)) %>%  summarize(n=n(),mu=mean(rating),sigma=sd(rating),b_g=mean(rating - avg - b_i_reg - b_u_reg - ifelse(is.na(b_i),0,b_i) - dev_u_t))
   tibble(genre=s,n=aux$n,mu=aux$mu,sigma=aux$sigma,b_g=aux$b_g)  
 }
 
-
 ## agg_sum_b_g to aggregate genre bias on genre g for those movies belonging to more than one genre
 agg_sum_b_g<-function(df,g){
-  auxdf<- df  %>% filter(genres %like% g) %>% mutate(new_b_g=all_genres_stats$b_g[which(all_genres_stats$genre==g)]) %>% select(userId,movieId,new_b_g)
+  auxdf<- df  %>% filter(grepl(g,genres)) %>% mutate(new_b_g=all_genres_stats$b_g[which(all_genres_stats$genre==g)]) %>% select(userId,movieId,new_b_g)
   df<- left_join(df, auxdf, by = c("userId","movieId")) %>% mutate(sum_b_g=ifelse(is.na(new_b_g),sum_b_g,sum_b_g+new_b_g)) %>% select(-new_b_g)
 }
 
@@ -208,6 +207,7 @@ dev2<-function(b){
 library(lubridate)
 library(purrr)
 library(RColorBrewer)
+library(dplyr)
 
 ## Release Year is included in the title, adding a column with the year
 
