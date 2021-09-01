@@ -91,6 +91,7 @@ l2<-5
 a<- -0.00015
 b<- 0.4
 n1<-780
+###############################################################################
 
 
 ## lambda1 function to regularize parameter λ1 according to The BellKor Solution pdf
@@ -544,9 +545,9 @@ Results
 
 ```
 
-Results seem better now but still far from acceptable
+Results seem better now but still far from desired ones
 
-Following recommendations made by The BellKor Solution pdf, averages are shrunk towards zero by using the regularization parameters, $λ_1,λ_2$, which are determined by validation on the test set. For this reason I created the functions lambda1 and lambda2 which will allow me to identify the best values of $λ_1,λ_2$. Note that this code has been run several times prior to its final release so in terms to avoid issues with the final deploy I have decided to create some initial parameters (with already calculated values) to prevent any unexpected problem.  
+Following recommendations made by The BellKor Solution pdf, averages are shrunk towards zero by using regularization. Regularization constrains the total variability of the effect sizes by penalizing large estimates that come from small sample sizes and in order to do so, The BellKor Solution uses the regularization parameters, $λ_1,λ_2$, which are determined by validation on the test set. For this reason I created the functions lambda1 and lambda2 which will allow me to identify the best values of $λ_1,λ_2$. Note that to prevent any unexpected problem I decided to initialize the value of those parameters 
 
 
 ```{r Baseline 2.1 movies bias + regularization, message=FALSE}
