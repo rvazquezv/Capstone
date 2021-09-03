@@ -637,7 +637,7 @@ Results
 
 The same as movie bias regularization, user bias regularization does not seem to improve too much, but at least improves a little bit so I also decided to keep it as part of my model.
 
-The paper made by the “BellKor’s Pragmatic Chaos” final solution states that the users tend to change their baseline ratings over time including a natural drift in a user’s rating scale, and besides, item’s popularity may also change over time. I agree on these assumptions as some of these time effects can be observed on the next plots
+The paper made by the “BellKor’s Pragmatic Chaos” final solution states that the users tend to change their baseline ratings over time including a natural drift in a user’s rating scale, and besides, item’s popularity may also change over time. I agree on these assumptions as some of these time effects can be observed on the next plots, specially for the movies that came after 1993
 
 ```{r Baseline reflexion on time effect, message=FALSE}
 
@@ -657,6 +657,30 @@ edx %>% mutate(date = round_date(date, unit = "month")) %>%
   geom_smooth() +
   labs(caption = "Figure 7")
 
+
+edx %>% group_by(movieId) %>%
+  summarize(n = n(), year = as.character(first(year))) %>%
+  qplot(year, n, data = ., geom = "boxplot") +
+  coord_trans(y = "sqrt") +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))+
+  labs(caption = "Figure 8")
+
+
+edx %>% 
+  filter(year >= 1993) %>%
+  group_by(movieId) %>%
+  summarize(n = n(), years = 2018 - first(year),
+            title = title[1],
+            rating = mean(rating)) %>%
+  mutate(rate = n/years) %>%
+  ggplot(aes(rate, rating)) +
+  geom_point() +
+  geom_smooth()+
+  labs(caption = "Figure 9")
+
+
+
+
 ```
 
 
@@ -670,7 +694,7 @@ In their paper they state that to choose the bins they have considered periods o
 ```{r Bin election optimization, message=FALSE}
 n <- seq(380, 830, 50)
 n1<-sapply(n,bins)
-qplot(n,n1) + labs(caption = "Figure 8")
+qplot(n,n1) + labs(caption = "Figure 10")
 n1<-n[which.min(n1)]
 ```
 
@@ -705,7 +729,7 @@ movie_avgs_reg_bin<-train_set %>%
   summarize(b_i = mean(rating - mu - b_i_reg - b_u_reg))
 
 qplot(b_i, data = movie_avgs_reg_bin, bins = 10, color = I("black")) +
-  labs(caption = "Figure 9")
+  labs(caption = "Figure 11")
 
 predicted_ratings <- test_set %>% 
   left_join(movie_avgs_reg, by='movieId') %>%
@@ -834,7 +858,7 @@ all_genres_stats %>% ggplot(aes(x=genre,y=mu)) +
   geom_hline(yintercept=mu)+
   theme(axis.text.x=element_blank(),
         axis.ticks.x=element_blank())+
-  labs(caption = "Figure 10")
+  labs(caption = "Figure 12")
 
 ## Let's now aggregate genre bias to test_set dataset for each genre present in all_genres
 
@@ -870,4 +894,4 @@ Results
 
 ```
 
-Comparing Figure 4, Figure 5 and Figure 8 and also RMSE and MAE calculated for each of those process it is possible to have a lazy idea of the influence of each of those bias on final predictions. 
+Comparing Figure 4, Figure 5 and Figure 9 and also RMSE and MAE calculated for each of those process it is possible to figure out the influence of each of those bias on final predictions, and which effects seem to affect more to final predictions 
