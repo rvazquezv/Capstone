@@ -671,7 +671,7 @@ In their paper they state that to choose the bins they have considered periods o
 ```{r Bin election optimization, message=FALSE}
 n <- seq(380, 830, 50)
 n1<-sapply(n,bins)
-plot(n,n1) + labs(caption = "Figure 8")
+qplot(n,n1) + labs(caption = "Figure 8")
 n1<-n[which.min(n1)]
 ```
 
