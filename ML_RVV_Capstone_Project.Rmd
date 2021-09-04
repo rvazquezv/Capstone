@@ -4,10 +4,11 @@ subtitle: 'HarvardX Data Science Professional Certificate: PH125.9x Capstone 1'
 author: "Rubén Vázquez del Valle"
 date: "4/8/2021"
 output: html_document
+toc: true
 ---
 
 
-## Introduction
+# 1.Introduction
 
 For this project, I will create a movie recommendation system using 10M version of the MovieLens dataset to make the computation a little easier.
 
@@ -342,7 +343,7 @@ rm(dl, ratings, movies, test_index, temp, movielens, removed)
 ```
 \newpage  
 
-## Exploratory Analysis
+# 2.Exploratory Analysis
 
 Let's start by exploring and summarizing the edx dataset:
 
@@ -374,7 +375,7 @@ edx %>%
 ```
 
 
-\n it can be appreciated several things:
+ it can be appreciated several things:
 
     1. The rating given more often is 4*
     2. There is no 0* rating in this dataset
@@ -412,7 +413,7 @@ edx %>%
 
 ```
 
-\n it is obvious that:
+ it is obvious that:
 
 
 
@@ -425,7 +426,7 @@ Hence, from this introductory analysis, some transformations seem to be needed o
 
 \newpage  
 
-## Transforming and partitioning edx dataset
+# 3.Transforming and partitioning edx dataset
 
 Timestamp is not in a human readable format and release year is included in title column, so let's transform timestamp into a more suitable format and store it into a column called date and extract release year from title to a new column called year
 
@@ -476,7 +477,7 @@ And finally I can start to implement the candidate models
 
 \newpage  
 
-## Modelling
+# 4.Modelling
 
 Bell and Koren's paper describing their final solution reflects on different machine learning techniques:
 
@@ -493,6 +494,9 @@ concluding
     
     
 Through this project I will try to follow some of this techniques and the explanations given in *"HarvardX - PH125.8x course: Data Science - Machine Learning"* specially on recommendation systems chapter, to obtain a model as good as possible, according to my skills 
+
+
+## 4.1 BASELINE PREDICTORS
 
 
 In doing so, the first baseline stage will be the naive one, just only calculating the average stars
@@ -875,7 +879,7 @@ all_genres_stats %>% ggplot(aes(x=genre,y=mu)) +
 ```
 
 
-And finally let's aggregate genre bias to test_set dataset for each genre present in all_genres
+And finally let's aggregate genre bias to test_set dataset for all genres present in each movie
 
 
 ```{r Baseline  5.4   genre bias , message=FALSE}
@@ -910,3 +914,7 @@ Results
 ```
 
 Comparing Figure 4, Figure 5 and Figure 11 and also RMSE and MAE calculated for each of those process it is possible to figure out the influence of each of those bias on final predictions, and which effects seem to affect more to final predictions 
+
+
+## 4.2 MATRIX FACTORIZATION
+
