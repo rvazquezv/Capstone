@@ -3,8 +3,12 @@ title: '**ML algorithm for Harvardx Capstone Course**'
 subtitle: 'HarvardX Data Science Professional Certificate: PH125.9x Capstone 1'
 author: "Rubén Vázquez del Valle"
 date: "4/8/2021"
-output: html_document
-toc: true
+output:
+  html_document:
+    df_print: kable
+    fig_caption: true
+    toc: true
+    latex_engine: xelatex
 ---
 
 
@@ -918,3 +922,21 @@ Comparing Figure 4, Figure 5 and Figure 11 and also RMSE and MAE calculated for 
 
 ## 4.2 MATRIX FACTORIZATION
 
+
+The typical way to perform matrix factorizations is to perform a singular value decomposition on the (sparse) ratings matrix. Rafael Irizarri on  *"HarvardX - PH125.8x course: Data Science - Machine Learning"* explained pretty well SVD and also introduced us to the way SVD was performed by different contestants on the Netflix challenge:
+
+
+
+    The SVD and PCA are complicated concepts, but one way to understand them is that SVD is an algorithm that finds the vectors p and q that permit us to rewrite the matrix r with m rows and n  columns as:
+    $$r_{u,i}= p_{u,1}·q{1,i} + p_{u,2}·q{2,i} + ... + p_{u,n}·q{n,i}  $$
+    with the variability of each term decreasing and with the ps uncorrelated. The algorithm also computes this variability so that we can know how much of the matrices, total variability is explained as we add new terms. This may permit us to see that, with just a few terms, we can explain most of the variability. 
+
+
+
+On their paper Y. Koren writes about improving baseline predictor by applying matrix factorization with temporal dynamics 
+They call their model SVD++ and is based on the prediction rule:
+
+$$r_{u,i}= b_{u,i} + q_{i}  $$
+
+
+Hence I tried to follow this approach, but due to lack of computational resources, lack of data science better skills and time to improve I obtained the residuals of the baseline prediction, transformed it into a residual matrix $r_{u,i}$ and applied SVD
