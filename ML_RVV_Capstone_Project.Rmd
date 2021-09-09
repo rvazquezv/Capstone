@@ -819,7 +819,7 @@ usertimebias_rmse<-RMSE(predicted_ratings, test_set$rating)
 usertimebias_mae<-MAE(predicted_ratings, test_set$rating)
 
 ## Save results to table
-Results<-rbind(Results,tibble(method = "Movie Bias reg + User bias reg + time effect bi + dev_u(t)", RMSE = usertimebias_rmse,MAE = usertimebias_mae))
+Results<-rbind(Results,tibble(method = "Movie Bias reg + User bias reg+ time effect on movie Bias reg + dev_u(t)", RMSE = usertimebias_rmse,MAE = usertimebias_mae))
 Results
 
 ```
@@ -913,7 +913,7 @@ movusergenrebias_rmse<-RMSE(predicted_ratings, test_set$rating)
 movusergenrebias_mae<-MAE(predicted_ratings, test_set$rating)
 
 ## Save results to table
-Results<-rbind(Results,tibble(method = "Movie Bias reg + User bias reg + time effect bi + dev_u(t) + Genre bias", RMSE = movusergenrebias_rmse,MAE = movusergenrebias_mae))
+Results<-rbind(Results,tibble(method = "Movie Bias reg + User bias reg+ time effect on movie Bias reg + dev_u(t) + Genre bias", RMSE = movusergenrebias_rmse,MAE = movusergenrebias_mae))
 Results
 ```
 
@@ -923,7 +923,7 @@ Comparing Figure 4, Figure 5 and Figure 11 and also RMSE and MAE calculated for 
 ## 4.2 MATRIX FACTORIZATION
 
 
-On their paper Yehuda Koren writes about improving baseline predictor by applying matrix factorization with temporal dynamics. He states they modeled SVD++ based on the following prediction rule:
+On his paper Yehuda Koren writes about improving baseline predictor by applying matrix factorization with temporal dynamics. He states they modeled SVD++ based on the following prediction rule:
 
 $$ \hat{r}_{u,i} = b_{u,i} + q_{i}^T\Biggl(p_{u}(t_{u,i})+|N(u)|^{-1/2}\sum_{j€N(u)} y_{j} \Biggr)  $$
 
@@ -951,8 +951,8 @@ Thus I decided to create a smaller random sample of edx dataset,
 users<-distinct(edx,userId)%>%pull(userId)
 movies<-distinct(edx,movieId)%>%pull(movieId)
 set.seed(1978, sample.kind="Rounding") # if using R 3.5 or earlier, use `set.seed(1)`
-sample_users<-as_tibble(sample(users,size=3*6987))%>%mutate(userId=value)%>%select(userId)
-movie_users<-as_tibble(sample(movies,size=3*1068))%>%mutate(movieId=value)%>%select(movieId)
+sample_users<-as_tibble(sample(users,size=2*6987))%>%mutate(userId=value)%>%select(userId)
+movie_users<-as_tibble(sample(movies,size=2*1068))%>%mutate(movieId=value)%>%select(movieId)
 small_edx <-edx %>% 
   semi_join(movie_users, by = "movieId") %>%
   semi_join(sample_users, by = "userId")

@@ -589,8 +589,8 @@ Results<-rbind(Results,tibble(method = "Movie Bias reg + User bias reg+ time eff
 users<-distinct(edx,userId)%>%pull(userId)
 movies<-distinct(edx,movieId)%>%pull(movieId)
 set.seed(1978, sample.kind="Rounding") # if using R 3.5 or earlier, use `set.seed(1)`
-sample_users<-as_tibble(sample(users,size=3*6987))%>%mutate(userId=value)%>%select(userId)
-movie_users<-as_tibble(sample(movies,size=3*1068))%>%mutate(movieId=value)%>%select(movieId)
+sample_users<-as_tibble(sample(users,size=2*6987))%>%mutate(userId=value)%>%select(userId)
+movie_users<-as_tibble(sample(movies,size=2*1068))%>%mutate(movieId=value)%>%select(movieId)
 small_edx <-edx %>% 
   semi_join(movie_users, by = "movieId") %>%
   semi_join(sample_users, by = "userId")
