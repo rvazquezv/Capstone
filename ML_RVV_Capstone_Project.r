@@ -582,3 +582,129 @@ Results<-rbind(Results,tibble(method = "Movie Bias reg + User bias reg+ time eff
 ##        Modelling
 ##        II.) MATRIX FACTORIZATION
 ###############################################################################
+
+## Creating random smaller subset
+
+
+users<-distinct(edx,userId)%>%pull(userId)
+movies<-distinct(edx,movieId)%>%pull(movieId)
+set.seed(1978, sample.kind="Rounding") # if using R 3.5 or earlier, use `set.seed(1)`
+sample_users<-as_tibble(sample(users,size=3*6987))%>%mutate(userId=value)%>%select(userId)
+movie_users<-as_tibble(sample(movies,size=3*1068))%>%mutate(movieId=value)%>%select(movieId)
+small_edx <-edx %>% 
+  semi_join(movie_users, by = "movieId") %>%
+  semi_join(sample_users, by = "userId")
+
+summary(small_edx)
+
+
+## Preprocessing original dataset to add info
+## Release Year is included in the title, adding a column with the year
+small_edx<-small_edx %>% mutate( date = as_datetime(timestamp),year=as.numeric(str_extract(str_extract(substrRight(title,6),"\\([^()]+.\\d"),"\\d+\\d")))
+
+## Selecting a random seed to allow replicability
+set.seed(1978, sample.kind="Rounding")
+## Creating training a testing partitions on edx movielens dataset 
+test_index <- createDataPartition(y = small_edx$rating, times = 1, p = 0.2, 
+                                  list = FALSE)
+small_train_set <- small_edx[-test_index,]
+small_test_set <- small_edx[test_index,]
+## Making testing partition comparable by taking out movies and users not present on training partition   
+small_test_set <-small_test_set %>% 
+  semi_join(small_train_set, by = "movieId") %>%
+  semi_join(small_train_set, by = "userId")
+
+
+###############################################################################
+## Small_Edx_baseline
+###############################################################################
+
+
+################## 1. Adding Naive model
+mu_hat <- mean(small_train_set$rating)
+naive_rmse <- RMSE(small_test_set$rating, mu_hat)
+naive_mae <- MAE(small_test_set$rating, mu_hat)
+## Save results to table
+small_Results <- tibble(method = "Naive", RMSE = naive_rmse, MAE = naive_mae)
+
+
+################## 2. Adding movies bias
+small_mu <- mean(small_train_set$rating) 
+small_movie_avgs <- small_train_set %>% 
+  group_by(movieId) %>% 
+  summarize(b_i = mean(rating - small_mu))
+predicted_ratings <- small_test_set %>% 
+  left_join(small_movie_avgs, by='movieId') %>%
+  mutate(pred = small_mu + b_i) %>%
+  pull(pred)
+movbias_rmse<-RMSE(predicted_ratings, small_test_set$rating)
+movbias_mae<-MAE(predicted_ratings, small_test_set$rating)
+## Save results to table
+small_Results<-rbind(small_Results,tibble(method = "Movie Bias", RMSE = movbias_rmse, MAE = movbias_mae))
+
+
+################## 3.Adding user bias
+small_user_avgs <- small_train_set %>% 
+  left_join(small_movie_avgs, by='movieId') %>%
+  group_by(userId) %>%
+  summarize(b_u = mean(rating - small_mu - b_i))
+predicted_ratings <- small_test_set %>% 
+  left_join(small_movie_avgs, by='movieId') %>%
+  left_join(small_user_avgs, by='userId') %>%
+  mutate(pred = small_mu + b_i + b_u) %>%
+  pull(pred)
+movuserbias_rmse<-RMSE(predicted_ratings, small_test_set$rating)
+movuserbias_mae<-MAE(predicted_ratings, small_test_set$rating)
+## Save results to table
+small_Results<-rbind(small_Results,tibble(method = "Movie Bias  + User bias", RMSE = movuserbias_rmse,MAE = movuserbias_mae))
+small_Results
+
+
+# Calculate residuals of my predictions 
+predicted_ratings <- small_train_set %>% 
+  left_join(small_movie_avgs, by='movieId') %>%
+  left_join(small_user_avgs, by='userId') %>%
+  mutate(pred = small_mu + b_i + b_u,resid=rating-pred)%>% 
+  select(userId, movieId, resid)
+
+
+# Once resids of my predictions have been calculated just transform them into a  matrix
+y <-as_tibble(predicted_ratings)
+z<- y %>% pivot_wider(names_from = "movieId", values_from = "resid") %>%
+  as.matrix()
+
+# Add rownames and columnanes to the matrix
+rownames(z)<- z[,1]
+z <- z[,-1]
+
+movie_titles <- small_edx %>% 
+  select(movieId, title) %>%
+  distinct()
+
+colnames(z) <- with(movie_titles, title[match(colnames(z), movieId)])
+
+#Erase NA values and plot explanaition on variability of the sd
+z[is.na(z)] <- 0
+
+#Applying Sigle Value Decomposition
+s<-svd(z)
+z_hat <- with(s,sweep(u[, 1:50], 2, d[1:50], FUN="*") %*% t(v[, 1:50]))
+
+#Transforming it from matrix to data.frame again
+rownames(z_hat)<- rownames(z)
+colnames(z_hat) <- colnames(z)
+userId<-as.numeric(rownames(z_hat))
+z_hat <- as_tibble(z_hat,rownames=NA) %>%   cbind(userId,.)  %>% 
+  gather(data=.,-userId,key='title',value=resid) 
+
+
+predicted_ratings <- small_test_set %>% 
+  left_join(small_movie_avgs, by='movieId') %>%
+  left_join(small_user_avgs, by='userId') %>%
+  left_join(z_hat, by=c('title','userId'))%>%
+  mutate(pred = small_mu + b_i + b_u + ifelse(is.na(resid),0,resid)) %>%
+  pull(pred)
+resid_rmse<-RMSE(predicted_ratings, test_set$rating)
+resid_mae<-MAE(predicted_ratings, test_set$rating)
+small_Results<-rbind(small_Results,tibble(method = "Movie Bias  + User bias + Matrix Factorization", RMSE = resid_rmse,MAE = resid_mae))
+small_Results
