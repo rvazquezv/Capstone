@@ -704,7 +704,15 @@ predicted_ratings <- small_test_set %>%
   left_join(z_hat, by=c('title','userId'))%>%
   mutate(pred = small_mu + b_i + b_u + ifelse(is.na(resid),0,resid)) %>%
   pull(pred)
-resid_rmse<-RMSE(predicted_ratings, test_set$rating)
-resid_mae<-MAE(predicted_ratings, test_set$rating)
+resid_rmse<-RMSE(predicted_ratings, small_test_set$rating)
+resid_mae<-MAE(predicted_ratings, small_test_set$rating)
 small_Results<-rbind(small_Results,tibble(method = "Movie Bias  + User bias + Matrix Factorization", RMSE = resid_rmse,MAE = resid_mae))
 small_Results
+
+
+###############################################################################
+##        
+##        VALIDATION
+##        
+###############################################################################
+
