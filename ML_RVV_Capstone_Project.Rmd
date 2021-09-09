@@ -923,20 +923,143 @@ Comparing Figure 4, Figure 5 and Figure 11 and also RMSE and MAE calculated for 
 ## 4.2 MATRIX FACTORIZATION
 
 
+On their paper Y. Koren writes about improving baseline predictor by applying matrix factorization with temporal dynamics. He states they modeled SVD++ based on the following prediction rule:
+
+$$ \hat{r}_{u,i} = b_{u,i} + q_{i}^T\Biggl(p_{u}(t_{u,i})+|N(u)|^{-1/2}\sum_{j€N(u)} y_{j} \Biggr)  $$
+
+
+I will try to follow what they have done and check if it also improves my current baseline model. 
+
 The typical way to perform matrix factorizations is to perform a singular value decomposition on the (sparse) ratings matrix. Rafael Irizarri on  *"HarvardX - PH125.8x course: Data Science - Machine Learning"* explained pretty well SVD and also introduced us to the way SVD was performed by different contestants on the Netflix challenge:
 
 
+    The SVD and PCA are complicated concepts, but one way to understand them is that SVD is an algorithm that finds  the vectors p and q that permit us to rewrite the matrix r with m rows and n columns as:
+    
+$$ r_{u,i}= p_{u,1}·q_{1,i} + p_{u,2}·q_{2,i} + ... + p_{u,n}·q_{n,i}  $$
 
-    The SVD and PCA are complicated concepts, but one way to understand them is that SVD is an algorithm that finds the vectors p and q that permit us to rewrite the matrix r with m rows and n  columns as:
-    $$r_{u,i}= p_{u,1}·q{1,i} + p_{u,2}·q{2,i} + ... + p_{u,n}·q{n,i}  $$
-    with the variability of each term decreasing and with the ps uncorrelated. The algorithm also computes this variability so that we can know how much of the matrices, total variability is explained as we add new terms. This may permit us to see that, with just a few terms, we can explain most of the variability. 
-
-
-
-On their paper Y. Koren writes about improving baseline predictor by applying matrix factorization with temporal dynamics 
-They call their model SVD++ and is based on the prediction rule:
-
-$$r_{u,i}= b_{u,i} + q_{i}  $$
+      with the variability of each term decreasing and with the ps uncorrelated. 
+      The algorithm also computes this variability so that we can know how much of the matrices, total variability is explained as we add new terms. This may permit us to see that, with just a few terms, we can explain most of the variability. 
 
 
-Hence I tried to follow this approach, but due to lack of computational resources, lack of data science better skills and time to improve I obtained the residuals of the baseline prediction, transformed it into a residual matrix $r_{u,i}$ and applied SVD
+Hence I tried to follow this approach. First of all it is important to notice that there are  `r format(n_distinct(edx$userId), big.mark=",",scientific=F)` different users and  `r format(n_distinct(edx$movieId), big.mark=",",scientific=F)` different movies, so tranform the dataset into a matrix means building a   `r format(n_distinct(edx$userId), big.mark=",",scientific=F)`x`r format(n_distinct(edx$movieId), big.mark=",",scientific=F)` matrix that my laptop is not able to process. 
+
+
+
+Thus I decided to create a smaller random sample of edx dataset,
+
+```{r smaller sample-code, message=FALSE}
+users<-distinct(edx,userId)%>%pull(userId)
+movies<-distinct(edx,movieId)%>%pull(movieId)
+
+set.seed(1978, sample.kind="Rounding") # if using R 3.5 or earlier, use `set.seed(1)`
+
+
+sample_users<-as_tibble(sample(users,size=3*6987))%>%mutate(userId=value)%>%select(userId)
+movie_users<-as_tibble(sample(movies,size=3*1068))%>%mutate(movieId=value)%>%select(movieId)
+
+
+small_edx <-edx %>% 
+  semi_join(movie_users, by = "movieId") %>%
+  semi_join(sample_users, by = "userId")
+head(small_edx)
+summary(small_edx)
+```
+
+apply my baseline model, 
+ 
+ 
+ ```{r small_edx apply baseline model, message=FALSE,echo = FALSE}
+
+## Preprocessing original dataset to add info
+
+
+
+## Release Year is included in the title, adding a column with the year
+
+small_edx<-small_edx %>% mutate( date = as_datetime(timestamp),year=as.numeric(str_extract(str_extract(substrRight(title,6),"\\([^()]+.\\d"),"\\d+\\d")))
+
+## Adding a column b_g, initialized to 0 that will contain Σ(b_g), the sum of all genre bias that each movie belongs to
+small_edx<-small_edx %>% mutate(sum_b_g=0)
+
+
+## Selecting a random seed to allow replicability
+set.seed(1978, sample.kind="Rounding")
+
+
+## Creating training a testing partitions on edx movielens dataset 
+
+test_index <- createDataPartition(y = small_edx$rating, times = 1, p = 0.2, 
+                                  list = FALSE)
+small_train_set <- small_edx[-test_index,]
+small_test_set <- small_edx[test_index,]
+
+
+## Making testing partition comparable by taking out movies and users not present on training partition   
+
+small_test_set <-small_test_set %>% 
+  semi_join(small_train_set, by = "movieId") %>%
+  semi_join(small_train_set, by = "userId")
+
+
+###############################################################################
+## Small_Edx_baseline
+###############################################################################
+
+
+
+
+################## 1. Adding Naive model
+mu_hat <- mean(small_train_set$rating)
+naive_rmse <- RMSE(small_test_set$rating, mu_hat)
+naive_mae <- MAE(small_test_set$rating, mu_hat)
+
+## Save results to table
+small_Results <- tibble(method = "Naive", RMSE = naive_rmse, MAE = naive_mae)
+
+
+
+################## 2. Adding movies bias
+
+small_mu <- mean(small_train_set$rating) 
+small_movie_avgs <- small_train_set %>% 
+  group_by(movieId) %>% 
+  summarize(b_i = mean(rating - small_mu))
+
+predicted_ratings <- small_test_set %>% 
+  left_join(small_movie_avgs, by='movieId') %>%
+  mutate(pred = small_mu + b_i) %>%
+  pull(pred)
+movbias_rmse<-RMSE(predicted_ratings, small_test_set$rating)
+movbias_mae<-MAE(predicted_ratings, small_test_set$rating)
+
+## Save results to table
+small_Results<-rbind(small_Results,tibble(method = "Movie Bias", RMSE = movbias_rmse, MAE = movbias_mae))
+
+
+################## 3.Adding user bias
+
+small_user_avgs <- small_train_set %>% 
+  left_join(small_movie_avgs, by='movieId') %>%
+  group_by(userId) %>%
+  summarize(b_u = mean(rating - small_mu - b_i))
+
+predicted_ratings <- small_test_set %>% 
+  left_join(small_movie_avgs, by='movieId') %>%
+  left_join(small_user_avgs, by='userId') %>%
+  mutate(pred = small_mu + b_i + b_u) %>%
+  pull(pred)
+movuserbias_rmse<-RMSE(predicted_ratings, small_test_set$rating)
+movuserbias_mae<-MAE(predicted_ratings, small_test_set$rating)
+
+## Save results to table
+small_Results<-rbind(small_Results,tibble(method = "Movie Bias  + User bias", RMSE = movuserbias_rmse,MAE = movuserbias_mae))
+
+
+```
+
+ 
+ compare results with previous ones and finally working on matrix factorization on this smaller matrix
+
+
+
+, but due to lack of computational resources, lack of data science better skills and time to improve I obtained the residuals of the baseline prediction, transformed it into a residual matrix $r_{u,i}$ and applied SVD
