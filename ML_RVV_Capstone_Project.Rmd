@@ -1028,7 +1028,7 @@ small_Results
 comparing results with previous ones, despite not being equal, seem close enough to consider this approach as worhty  and finally prior to further efforts,  working on matrix factorization on this smaller matrix instead of the full matrix wich would be unmanageable with my current resources
 
 
-Now instead of the original `r format(n_distinct(edx$userId), big.mark=",",scientific=F)`x`r format(n_distinct(edx$movieId), big.mark=",",scientific=F)` matrix, I will be working with a   `r format(n_distinct(small_edx$userId), big.mark=",",scientific=F)`x`r format(n_distinct(small_edx$movieId), big.mark=",",scientific=F)` matrix, that despite of being huge is manageable on my laptop and do not seem to lose to much information
+Now instead of the original `r format(n_distinct(edx$userId), big.mark=",",scientific=F)`x`r format(n_distinct(edx$movieId), big.mark=",",scientific=F)` matrix, I will be working with a   `r format(n_distinct(small_edx$userId), big.mark=",",scientific=F)`x`r format(n_distinct(small_edx$movieId), big.mark=",",scientific=F)` matrix, that despite of being huge is manageable on my laptop and do not seem to lose too much information
 
 
 At this point, I will obtain residuals from my baseline prediction model and transform residuals into a matrix I will apply SVD algorithm
