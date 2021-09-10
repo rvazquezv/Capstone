@@ -560,10 +560,10 @@ Results seem better now but still far from desired ones
 Following recommendations made by The BellKor Solution pdf, averages are shrunk towards zero by using regularization. Regularization constrains the total variability of the effect sizes by penalizing large estimates that come from small sample sizes. The BellKor Solution uses the regularization parameters, $λ_1,λ_2$, to regularize movies and users effects. Those parameters, $λ_1,λ_2$,  are determined by validation on the test set.
 
 In fact the proposed formula for regularizing $b_{i}$ is:
-$$ \underline{Σ_{u∈R(i)}·(r_{u,i}-\mu)}\\λ_{1} + |R(i)| $$
+$$ b_{i}=\frac{Σ_{u∈R(i)}·(r_{u,i}-\mu)}{λ_{1} + |R(i)|} $$
 
 and  the proposed formula for regularizing  $b_{u}$ is:
-$$ \underline{Σ_{i∈R(u)}·(r_{u,i}-\mu-b_{i})}\\λ_{2} + |R(u)| $$
+$$ b_{u}=\frac{Σ_{i∈R(u)}·(r_{u,i}-\mu-b_{i})}{λ_{2} + |R(u)|} $$
 
 
 For this reason I created the functions lambda1 and lambda2 which will allow me to identify the best values of $λ_1$ and $λ_2$. 
