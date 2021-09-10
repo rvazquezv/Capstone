@@ -38,7 +38,7 @@ n1<-780
 
 ###############################################################################
 ###############################################################################
-##        Functions needed for the project
+##        Functions specifically created for the project
 ###############################################################################
 ###############################################################################
 
@@ -260,15 +260,14 @@ dev2<-function(b){
 }
 
 
+
 ###############################################################################
+##
+##        Preprocessing, cleaning, wrangling and creating partitions
+##        
 ###############################################################################
 
-
-## Preprocessing original dataset to add info
-
-
-
-## Release Year is included in the title, adding a column with the year
+## Release Year is included in the title,filtering it adding a column with the year
 
 edx<-edx %>% mutate( date = as_datetime(timestamp),year=as.numeric(str_extract(str_extract(substrRight(title,6),"\\([^()]+.\\d"),"\\d+\\d")))
 
@@ -296,6 +295,7 @@ test_set <-test_set %>%
 
 
 ###############################################################################
+##
 ##        Modelling
 ##        I.) BASELINE
 ###############################################################################
@@ -534,7 +534,7 @@ all_genres<-enframe(str_split(all_genres, pattern="\\|")) %>% unnest(value) %>% 
 all_genres<-all_genres %>% mutate(genre=value) %>% select(genre)
 
 
-## Let's start by calculating average rating by genre and genre bias b_g
+## Calculating average rating by genre and genre bias b_g
 all_genres_stats<-tibble(.rows = NULL)
 for(i in (1:length(all_genres$genre))){
   all_genres_stats<-rbind.data.frame(all_genres_stats,rating_stats_bygenre(genre_avgs,mu,all_genres$genre[i]))
@@ -548,7 +548,7 @@ all_genres_stats %>% ggplot(aes(x=genre,y=mu)) +
   theme(axis.text.x=element_blank(),
         axis.ticks.x=element_blank())
 
-## Let's now aggregate genre bias to test_set dataset for each genre present in all_genres
+## Aggregating genre bias to test_set dataset for each genre present in all_genres
 
 for(i in (1:length(all_genres$genre))){
   test_set<-agg_sum_b_g(test_set,all_genres$genre[i])
@@ -582,6 +582,7 @@ Results<-rbind(Results,tibble(method = "Movie Bias reg + User bias reg+ time eff
 
 
 ###############################################################################
+##
 ##        Modelling
 ##        II.) MATRIX FACTORIZATION
 ###############################################################################
@@ -601,13 +602,13 @@ small_edx <-edx %>%
 summary(small_edx)
 
 
-## Preprocessing original dataset to add info
+## Preprocessing smaller dataset to add info
 ## Release Year is included in the title, adding a column with the year
 small_edx<-small_edx %>% mutate( date = as_datetime(timestamp),year=as.numeric(str_extract(str_extract(substrRight(title,6),"\\([^()]+.\\d"),"\\d+\\d")))
 
 ## Selecting a random seed to allow replicability
 set.seed(1978, sample.kind="Rounding")
-## Creating training a testing partitions on edx movielens dataset 
+## Creating training a testing partitions on small_edx movielens dataset 
 test_index <- createDataPartition(y = small_edx$rating, times = 1, p = 0.2, 
                                   list = FALSE)
 small_train_set <- small_edx[-test_index,]
@@ -663,7 +664,7 @@ small_Results<-rbind(small_Results,tibble(method = "Movie Bias  + User bias", RM
 small_Results
 
 
-# Calculate residuals of my predictions 
+################## 4.Calculating residuals of my predictions and preparing data
 predicted_ratings <- small_train_set %>% 
   left_join(small_movie_avgs, by='movieId') %>%
   left_join(small_user_avgs, by='userId') %>%
@@ -689,7 +690,7 @@ colnames(z) <- with(movie_titles, title[match(colnames(z), movieId)])
 #Erase NA values and plot explanaition on variability of the sd
 z[is.na(z)] <- 0
 
-#Applying Sigle Value Decomposition
+################### 5. Applying Sigle Value Decomposition
 s<-svd(z)
 z_hat <- with(s,sweep(u[, 1:50], 2, d[1:50], FUN="*") %*% t(v[, 1:50]))
 
@@ -700,7 +701,7 @@ userId<-as.numeric(rownames(z_hat))
 z_hat <- as_tibble(z_hat,rownames=NA) %>%   cbind(userId,.)  %>% 
   gather(data=.,-userId,key='title',value=resid) 
 
-
+#Forecasting test set with SVD on residuals
 predicted_ratings <- small_test_set %>% 
   left_join(small_movie_avgs, by='movieId') %>%
   left_join(small_user_avgs, by='userId') %>%
@@ -720,7 +721,7 @@ small_Results
 ###############################################################################
 
 
-## Release Year is included in the title, adding a column with the year
+## Release Year is included in the title, adding a column with the year to validation set
 
 validation<-validation %>% mutate( date = as_datetime(timestamp),year=as.numeric(str_extract(str_extract(substrRight(title,6),"\\([^()]+.\\d"),"\\d+\\d")))
 
@@ -728,13 +729,14 @@ validation<-validation %>% mutate( date = as_datetime(timestamp),year=as.numeric
 validation<-validation %>% mutate(sum_b_g=0)
 
 
-## Let's now aggregate genre bias to test_set dataset for each genre present in all_genres
+## Aggregate genre bias to validation dataset for each genre present in all_genres
 
 for(i in (1:length(all_genres$genre))){
   validation<-agg_sum_b_g(validation,all_genres$genre[i])
 }
 
 
+## Forecasting ratings on validation dataset and computing final RMSE and MAE
 
 final_prediction <- validation %>% 
   left_join(movie_avgs_reg, by='movieId') %>%
@@ -756,3 +758,12 @@ final_prediction <- validation %>%
   pull(pred)
 final_rmse<-RMSE(final_prediction, validation$rating)
 final_mae<-MAE(final_prediction, validation$rating)
+
+###############################################################################
+##        
+##        RESULTS
+##        
+###############################################################################
+
+final_rmse
+
