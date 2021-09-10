@@ -1119,6 +1119,62 @@ small_Results
 # 5.Validation
 
 
+After comparing results obtained by the two approaches explored, it seems obvious that matrix factorization seems more promising. Nevertheless the gain obtained in terms of RMSE is only `r format(small_Results$RMSE[2]-small_Results$RMSE[3] , big.mark=",",scientific=F)` which does not seem enough to compensate computational resources needed.
+
+For this reason I decided to choose "`r Results$method[8]`" as my final model
+
+AS I have modified original edx dataset to be able to process some data, it is also needed to transform validation dataset to change the format of the date, to extract the release year and to add the genre bias aggregator initialized to zero
+
+Once, this has been done as we can appreciate in table below
+
+```{r validation 1, message=FALSE,echo=FALSE}
+## Release Year is included in the title, adding a column with the year
+
+validation<-validation %>% mutate( date = as_datetime(timestamp),year=as.numeric(str_extract(str_extract(substrRight(title,6),"\\([^()]+.\\d"),"\\d+\\d")))
+
+## Adding a column b_g, initialized to 0 that will contain Σ(b_g), the sum of all genre bias that each movie belongs to
+validation<-validation %>% mutate(sum_b_g=0)
+
+
+## Let's now aggregate genre bias to test_set dataset for each genre present in all_genres
+
+for(i in (1:length(all_genres$genre))){
+  validation<-agg_sum_b_g(validation,all_genres$genre[i])
+}
+
+head(validation)
+```
+
+I calculate the results of my vfinal model on the validation set as follows:
+
+
+```{r validation 2, message=FALSE}
+final_prediction <- validation %>% 
+  left_join(movie_avgs_reg, by='movieId') %>%
+  mutate(bin=case_when(difftime(date,first_rate_i,units="days")<=n ~ 1,
+                       difftime(date,first_rate_i,units="days")>n & difftime(date,first_rate_i,units="days")<=2*n ~ 2,
+                       difftime(date,first_rate_i,units="days")>2*n & difftime(date,first_rate_i,units="days")<=3*n ~ 3,
+                       difftime(date,first_rate_i,units="days")>3*n & difftime(date,first_rate_i,units="days")<=4*n ~ 4,
+                       difftime(date,first_rate_i,units="days")>4*n & difftime(date,first_rate_i,units="days")<=5*n ~ 5,
+                       difftime(date,first_rate_i,units="days")>5*n & difftime(date,first_rate_i,units="days")<=6*n ~ 6,
+                       difftime(date,first_rate_i,units="days")>6*n & difftime(date,first_rate_i,units="days")<=7*n ~ 7,
+                       difftime(date,first_rate_i,units="days")>7*n & difftime(date,first_rate_i,units="days")<=8*n ~ 8,
+                       difftime(date,first_rate_i,units="days")>8*n & difftime(date,first_rate_i,units="days")<=9*n ~ 9,
+                       difftime(date,first_rate_i,units="days")>9*n~10))  %>%
+  left_join(user_avgs_reg, by='userId')%>%
+  left_join(movie_avgs_reg_bin, by=c('movieId','bin'))%>%
+  mutate(dev_u_t=as.numeric(difftime(date,t_u,units="days"))) %>%
+  mutate(dev_u_t=a*sign(dev_u_t)*(abs(dev_u_t)^b)) %>%
+  mutate(pred = mu + ifelse(is.na(b_i_reg),0,b_i_reg) + ifelse(is.na(b_u_reg),0,b_u_reg) + ifelse(is.na(b_i),0,b_i)+dev_u_t+sum_b_g) %>%         
+  pull(pred)
+final_rmse<-RMSE(final_prediction, validation$rating)
+final_mae<-MAE(final_prediction, validation$rating)
+
+```
+
+
+obtaining a final  __`r format(final_rmse , big.mark=",",scientific=F)`__ RMSE 
+
 
 
 # 6.Conclusions
