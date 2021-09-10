@@ -927,6 +927,7 @@ On his paper Yehuda Koren writes about improving baseline predictor by applying 
 
 $$ \hat{r}_{u,i} = b_{u,i} + q_{i}^T\Biggl(p_{u}(t_{u,i})+|N(u)|^{-1/2}\sum_{j€N(u)} y_{j} \Biggr)  $$
 
+where $\hat{r}_{u,i}$ are the preditec ratings, $b_{u,i}$ the effect on users and movies previously explained on baseline model,  $|N(u)|$ the cardinality of the set of ratings provided by user u, and finally $q_{i},y_{i}$ and $p_{u}(t_{u,i})$ factors provided by matrix factorization that will capture the effects not explained yet
 
 I will try to follow what they have done and check if it also improves my current baseline model. 
 
@@ -1115,6 +1116,12 @@ small_Results<-rbind(small_Results,tibble(method = "Movie Bias  + User bias + Ma
 small_Results
 ```
 
+# 5.Validation
+
+
+
+
+# 6.Conclusions
 
 
 
