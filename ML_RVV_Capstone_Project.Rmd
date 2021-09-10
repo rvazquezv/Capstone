@@ -1151,16 +1151,16 @@ I calculate the results of my vfinal model on the validation set as follows:
 ```{r validation 2, message=FALSE}
 final_prediction <- validation %>% 
   left_join(movie_avgs_reg, by='movieId') %>%
-  mutate(bin=case_when(difftime(date,first_rate_i,units="days")<=n ~ 1,
-                       difftime(date,first_rate_i,units="days")>n & difftime(date,first_rate_i,units="days")<=2*n ~ 2,
-                       difftime(date,first_rate_i,units="days")>2*n & difftime(date,first_rate_i,units="days")<=3*n ~ 3,
-                       difftime(date,first_rate_i,units="days")>3*n & difftime(date,first_rate_i,units="days")<=4*n ~ 4,
-                       difftime(date,first_rate_i,units="days")>4*n & difftime(date,first_rate_i,units="days")<=5*n ~ 5,
-                       difftime(date,first_rate_i,units="days")>5*n & difftime(date,first_rate_i,units="days")<=6*n ~ 6,
-                       difftime(date,first_rate_i,units="days")>6*n & difftime(date,first_rate_i,units="days")<=7*n ~ 7,
-                       difftime(date,first_rate_i,units="days")>7*n & difftime(date,first_rate_i,units="days")<=8*n ~ 8,
-                       difftime(date,first_rate_i,units="days")>8*n & difftime(date,first_rate_i,units="days")<=9*n ~ 9,
-                       difftime(date,first_rate_i,units="days")>9*n~10))  %>%
+  mutate(bin=case_when(difftime(date,first_rate_i,units="days")<=n1 ~ 1,
+                       difftime(date,first_rate_i,units="days")>n1 & difftime(date,first_rate_i,units="days")<=2*n1 ~ 2,
+                       difftime(date,first_rate_i,units="days")>2*n1 & difftime(date,first_rate_i,units="days")<=3*n1 ~ 3,
+                       difftime(date,first_rate_i,units="days")>3*n1 & difftime(date,first_rate_i,units="days")<=4*n1 ~ 4,
+                       difftime(date,first_rate_i,units="days")>4*n1 & difftime(date,first_rate_i,units="days")<=5*n1 ~ 5,
+                       difftime(date,first_rate_i,units="days")>5*n1 & difftime(date,first_rate_i,units="days")<=6*n1 ~ 6,
+                       difftime(date,first_rate_i,units="days")>6*n1 & difftime(date,first_rate_i,units="days")<=7*n1 ~ 7,
+                       difftime(date,first_rate_i,units="days")>7*n1 & difftime(date,first_rate_i,units="days")<=8*n1 ~ 8,
+                       difftime(date,first_rate_i,units="days")>8*n1 & difftime(date,first_rate_i,units="days")<=9*n1 ~ 9,
+                       difftime(date,first_rate_i,units="days")>9*n1~10))  %>%
   left_join(user_avgs_reg, by='userId')%>%
   left_join(movie_avgs_reg_bin, by=c('movieId','bin'))%>%
   mutate(dev_u_t=as.numeric(difftime(date,t_u,units="days"))) %>%
