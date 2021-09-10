@@ -14,20 +14,23 @@ output:
 
 # 1.Introduction
 
-For this project, I will create a movie recommendation system using 10M version of the MovieLens dataset to make the computation a little easier.
+The Netflix Prize was an open competition for the best algorithm to predict user ratings for films, based on previous ratings without any other information about the users or films. BellKor's Pragmatic Chaos team won the contest on 2009 earning US$1,000,000. Through all this process, R. Bell, Y. Koren and C. Volinsky members of the aforementioned team, wrote several papers on their work and  researchs.    
 
-To build my origin datasets I have downloaded the MovieLens data previously described and run the code provided by Harvardx Team.
+According to wikipedia:
+> MovieLens is a web-based recommender system and virtual community that recommends movies for its users to watch, based on their film preferences using collaborative filtering of members' movie ratings and movie reviews. It contains about 11 million ratings for about 8500 movies
 
-Once dataset was created I have followed Bell and Koren's paper describing their final solution to the Netflix Prize included in the next link: http://www.netflixprize.com/assets/GrandPrize2009_BPC_BellKor.pdf.
 
+The purpose of this project is creating a movie recommendation system using 10M version of the MovieLens dataset to make the computation a little easier.
+
+To build the origin dataset Harvardx Team provided specific code to be applied after downloading the MovieLens data previously described.
+
+Once dataset was created, I have based my work on Bell and Koren's papers describing their final solution to the Netflix Prize: http://www.netflixprize.com/assets/GrandPrize2009_BPC_BellKor.pdf.
 
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE,warning = FALSE)
+knitr::opts_chunk$set(echo = FALSE,warning = FALSE)
 ```
 
-
-Following libraries will be needed for the project:
 
 ```{r loading-libs, message=FALSE}
 
@@ -47,9 +50,11 @@ library(RColorBrewer)
 library(dplyr)
 ```
 
-Following Functions will also be needed for the project
 
 ```{r loading-functions, message=FALSE}
+###############################################################################
+## Following Functions will also be needed for the project
+
 ###############################################################################
 ###############################################################################
 ##  Initialize parameters
@@ -289,9 +294,9 @@ dev2<-function(b){
 
 \newpage
 
- Harvardx Team Code provided to build original dataset is the following one: 
-
-```{r loading-code, message=FALSE}
+ 
+```{r loading-Harvardx-code, message=FALSE}
+# Harvardx Team Code provided to build original dataset is the following one: 
 
 ##########################################################
 # Create edx set, validation set (final hold-out test set)
@@ -350,7 +355,12 @@ rm(dl, ratings, movies, test_index, temp, movielens, removed)
 ```
 \newpage  
 
-# 2.Exploratory Analysis
+# 2 Methodology
+
+Next step consist on analyzing the data provided, cleaning, wrangling and preparing it in case of actions were needed to decide which kind of algorithms will be worthy in terms of recommendation systems
+
+
+## 2.1 Exploratory Analysis
 
 Let's start by exploring and summarizing the edx dataset:
 
@@ -433,7 +443,7 @@ Hence, from this introductory analysis, some transformations seem to be needed o
 
 \newpage  
 
-# 3.Transforming and partitioning edx dataset
+## 2.2.Transforming and partitioning edx dataset
 
 Timestamp is not in a human readable format and release year is included in title column, so let's transform timestamp into a more suitable format and store it into a column called date and extract release year from title to a new column called year
 
@@ -477,6 +487,8 @@ test_set <-test_set %>%
   semi_join(train_set, by = "movieId") %>%
   semi_join(train_set, by = "userId")
 
+summary(train_set)
+summary(test_set)
 
 ```
 
@@ -484,7 +496,7 @@ And finally I can start to implement the candidate models
 
 \newpage  
 
-# 4.Modelling
+## 2.3 Modelling
 
 Bell and Koren's paper describing their final solution reflects on different machine learning techniques:
 
@@ -503,7 +515,7 @@ concluding
 Through this project I will try to follow some of this techniques and the explanations given in *"HarvardX - PH125.8x course: Data Science - Machine Learning"* specially on recommendation systems chapter, to obtain a model as good as possible, according to my skills 
 
 
-## 4.1 BASELINE PREDICTORS
+### 2.3.1 BASELINE PREDICTORS
 
 
 In doing so, the first baseline stage will be the naive one, just only calculating the average stars
@@ -923,7 +935,7 @@ Results
 Comparing Figure 4, Figure 5 and Figure 11 and also RMSE and MAE calculated for each of those process it is possible to figure out the influence of each of those bias on final predictions, and which effects seem to affect more to final predictions 
 
 
-## 4.2 MATRIX FACTORIZATION
+### 2.3.2 MATRIX FACTORIZATION
 
 
 On his paper Yehuda Koren writes about improving baseline predictor by applying matrix factorization with temporal dynamics. He states they modeled SVD++ based on the following prediction rule:
@@ -1119,7 +1131,7 @@ small_Results<-rbind(small_Results,tibble(method = "Movie Bias  + User bias + Ma
 small_Results
 ```
 
-# 5.Validation
+# 3.Results
 
 
 After comparing results obtained by the two approaches explored, it seems obvious that matrix factorization seems more promising. Nevertheless the gain obtained in terms of RMSE is only `r format(small_Results$RMSE[2]-small_Results$RMSE[3] , big.mark=",",scientific=F)` which does not seem enough to compensate computational resources needed.
@@ -1180,8 +1192,8 @@ obtaining a final  __`r format(final_rmse , big.mark=",",scientific=F)`__ RMSE
 
 
 
-# 6.Conclusions
+# 4.Conclusions
 
 
-
+a conclusion section that gives a brief summary of the report, its limitations and future work
 
