@@ -7,7 +7,8 @@
 ## Comments: 10M version of movielens dataset has been prepared by edx and splitted in two datasets:
 ##           - edx dataset for creating and training the model
 ##           - Validation dataset for validation purposes only
-
+##           - Prior to launch this script Harvardx Code provided building edx and Validation need to be executed!!!!
+##           This script takes 25 minutes in .... and 90 minutes in ......
 
 
 
