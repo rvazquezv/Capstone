@@ -7,18 +7,90 @@
 ## Comments: 10M version of movielens dataset has been prepared by edx and splitted in two datasets:
 ##           - edx dataset for creating and training the model
 ##           - Validation dataset for validation purposes only
-##           - Prior to launch this script Harvardx Code provided building edx and Validation need to be executed!!!!
-##           This script takes 25 minutes in .... and 90 minutes in ......
+##           This script takes 25 minutes in .... 
+##           and 50 minutes in Intel(R) Core i7 5500U CPU @ 2.4GHzs (4 CPUs) 8192 MB RAM 
+
+###############################################################################
+###############################################################################
 
 
 
+
+###############################################################################
+###############################################################################
+##
+## Code Provided by HarvardXv Team to buid edx and Validation dataset
+##
+###############################################################################
+###############################################################################
+
+##########################################################
+# Create edx set, validation set (final hold-out test set)
+##########################################################
+
+# Note: this process could take a couple of minutes
+
+if(!require(tidyverse)) install.packages("tidyverse", repos = "http://cran.us.r-project.org")
+if(!require(caret)) install.packages("caret", repos = "http://cran.us.r-project.org")
+if(!require(data.table)) install.packages("data.table", repos = "http://cran.us.r-project.org")
 
 library(tidyverse)
 library(caret)
 library(data.table)
+
+# MovieLens 10M dataset:
+# https://grouplens.org/datasets/movielens/10m/
+# http://files.grouplens.org/datasets/movielens/ml-10m.zip
+
+dl <- tempfile()
+download.file("http://files.grouplens.org/datasets/movielens/ml-10m.zip", dl)
+
+ratings <- fread(text = gsub("::", "\t", readLines(unzip(dl, "ml-10M100K/ratings.dat"))),
+                 col.names = c("userId", "movieId", "rating", "timestamp"))
+
+movies <- str_split_fixed(readLines(unzip(dl, "ml-10M100K/movies.dat")), "\\::", 3)
+colnames(movies) <- c("movieId", "title", "genres")
+
+# if using R 4.0 or later:
+movies <- as.data.frame(movies) %>% mutate(movieId = as.numeric(movieId),
+                                           title = as.character(title),
+                                           genres = as.character(genres))
+
+
+movielens <- left_join(ratings, movies, by = "movieId")
+
+# Validation set will be 10% of MovieLens data
+set.seed(1, sample.kind="Rounding") # if using R 3.5 or earlier, use `set.seed(1)`
+test_index <- createDataPartition(y = movielens$rating, times = 1, p = 0.1, list = FALSE)
+edx <- movielens[-test_index,]
+temp <- movielens[test_index,]
+
+# Make sure userId and movieId in validation set are also in edx set
+validation <- temp %>% 
+  semi_join(edx, by = "movieId") %>%
+  semi_join(edx, by = "userId")
+
+# Add rows removed from validation set back into edx set
+removed <- anti_join(temp, validation)
+edx <- rbind(edx, removed)
+
+rm(dl, ratings, movies, test_index, temp, movielens, removed)
+
+
+
+###############################################################################
+###############################################################################
+##
+## Libraries and functions needed for the project
+##
+###############################################################################
+###############################################################################
+
+if(!require(lubridate)) install.packages("lubridate", repos = "http://cran.us.r-project.org")
+if(!require(purrr)) install.packages("purrr", repos = "http://cran.us.r-project.org")
+if(!require(dplyr)) install.packages("dplyr", repos = "http://cran.us.r-project.org")
 library(lubridate)
 library(purrr)
-library(RColorBrewer)
 library(dplyr)
 
 
@@ -340,7 +412,7 @@ Results<-rbind(Results,tibble(method = "Movie Bias", RMSE = movbias_rmse, MAE = 
 ## Following recommendations made by The BellKor Solution pdf, averages are shrunk towards zero by using the regularization 
 ## parameters, λ1,λ2, which are determined by validation on the test set
 
-l <- seq(0, 20, 0.25)
+l <- seq(0, 10, 0.25)
 l1<-l[which.min(sapply(l,lambda1))]
 l1
 
@@ -389,7 +461,7 @@ Results<-rbind(Results,tibble(method = "Movie Bias reg + User bias", RMSE = movu
 ## Following recommendations made by The BellKor Solution pdf, averages are shrunk towards zero by using the regularization 
 ## parameters, λ1,λ2, which are determined by validation on the test set
 
-l <- seq(5, 25, 1)
+l <- seq(4, 15, 1)
 l2<-l[which.min(sapply(l,lambda2))]
 l2
 
@@ -413,7 +485,7 @@ Results<-rbind(Results,tibble(method = "Movie Bias reg + User bias reg", RMSE = 
 ################## 4.1 Adding movies bias regularized as a function of time segmented in bins
 ## Following recommendations made by The BellKor Solution pdf bi(t) = bi +bi,Bin(t) 
 
-m <- seq(380, 830, 50)
+m <- seq(480, 880, 100)
 m1<-sapply(m,bins)
 qplot(m,m1) + labs(caption = "Figure 10")
 n1<-m[which.min(m1)]
@@ -470,13 +542,13 @@ Results<-rbind(Results,tibble(method = "Movie Bias reg + User bias reg+ time eff
 ## a natural drift in a user’s rating scale, so we build user bias bu as a function of time dev_u(t) = α·sign(t −tu)·|t −tu|^β
 ## α,β are determined by validation on the test set
 
-a<- seq(-0.0015,0.0005,0.00025)
+a<- seq(-0.0025,0.0005,0.0005)
 b<-0.4                               # initial β proposed in The BellKor Solution paper
 devut<-sapply(a,dev1)
 a<-a[which.min(devut)]
 a
 
-b <- seq(0, 1,0.1)
+b <- seq(0, 1,0.2)
 devut<-sapply(b,dev2)
 b<-b[which.min(devut)]
 b
@@ -594,8 +666,8 @@ Results<-rbind(Results,tibble(method = "Movie Bias reg + User bias reg+ time eff
 users<-distinct(edx,userId)%>%pull(userId)
 movies<-distinct(edx,movieId)%>%pull(movieId)
 set.seed(1978, sample.kind="Rounding") # if using R 3.5 or earlier, use `set.seed(1)`
-sample_users<-as_tibble(sample(users,size=2*6987))%>%mutate(userId=value)%>%select(userId)
-movie_users<-as_tibble(sample(movies,size=2*1068))%>%mutate(movieId=value)%>%select(movieId)
+sample_users<-as_tibble(sample(users,size=6987))%>%mutate(userId=value)%>%select(userId)
+movie_users<-as_tibble(sample(movies,size=1068))%>%mutate(movieId=value)%>%select(movieId)
 small_edx <-edx %>% 
   semi_join(movie_users, by = "movieId") %>%
   semi_join(sample_users, by = "userId")
