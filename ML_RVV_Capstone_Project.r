@@ -7,9 +7,11 @@
 ## Comments: 10M version of movielens dataset has been prepared by edx and splitted in two datasets:
 ##           - edx dataset for creating and training the model
 ##           - Validation dataset for validation purposes only
-##           This script takes 25 minutes in .... 
-##           and 50 minutes in Intel(R) Core i7 5500U CPU @ 2.4GHzs (4 CPUs) 8192 MB RAM 
-
+##           This script takes 15 minutes in Intel(R) Core i7 8565U CPU @ 1.8GHzs (4 CPUs) 16 GB RAM 
+##                         and 50 minutes in Intel(R) Core i7 5500U CPU @ 2.4GHzs (4 CPUs) 8  GB RAM 
+##
+##
+## INTERNET CONEXION NEEDED TO RUN SUCCESFULLY THE SCREEN TO donwload source date
 ###############################################################################
 ###############################################################################
 
