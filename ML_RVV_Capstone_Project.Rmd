@@ -588,7 +588,7 @@ Finally, note that to prevent any unexpected problem such as syntax issues, I de
 ```{r Baseline 2.1 movies bias + regularization, message=FALSE}
 ################## 2.1. Adding movies bias regularized 
 
-l <- seq(0, 20, 0.25)
+l <- seq(0, 10, 0.25)
 l1<-l[which.min(sapply(l,lambda1))]
 l1
 
@@ -647,7 +647,7 @@ Results are still improving, but I will try to do it better. So let`s try also r
 ```{r Baseline 3.1 movies bias reg + user bias reg, message=FALSE}
 ################## 3.1. Adding user bias regularized 
 
-l <- seq(5, 25, 1)
+l <- seq(4, 15, 1)
 l2<-l[which.min(sapply(l,lambda2))]
 l2
 
@@ -722,7 +722,7 @@ $$b_{i}(t) = bi +b_{i,Bin(t)}$$
 In their paper they state that to choose the bins they have considered periods of time of around thirty weeks, but these considerations do not work well enough in my case so I created bins function assuming an arbitrary number of 10 bins that optimize the time split between each ot them as follows
 
 ```{r Bin election optimization, message=FALSE}
-m <- seq(380, 830, 50)
+m <- seq(480, 880, 100)
 m1<-sapply(m,bins)
 qplot(m,m1) + labs(caption = "Figure 10")
 n1<-m[which.min(m1)]
@@ -799,13 +799,13 @@ Indeed this time effect is allowing to improve a little bit also
 ## a natural drift in a user’s rating scale, so we build user bias bu as a function of time dev_u(t) = α·sign(t −tu)·|t −tu|^β
 ## α,β are determined by validation on the test set
 
-a<- seq(-0.0015,0.0005,0.00025)
+a<- seq(-0.0025,0.0005,0.0005)
 b<-0.4                               # initial β proposed in The BellKor Solution paper
 devut<-sapply(a,dev1)
 a<-a[which.min(devut)]
 a
 
-b <- seq(0, 1,0.1)
+b <- seq(0, 1,0.2)
 devut<-sapply(b,dev2)
 b<-b[which.min(devut)]
 b
@@ -967,8 +967,8 @@ Thus I decided to create a smaller random sample of edx dataset,
 users<-distinct(edx,userId)%>%pull(userId)
 movies<-distinct(edx,movieId)%>%pull(movieId)
 set.seed(1978, sample.kind="Rounding") # if using R 3.5 or earlier, use `set.seed(1)`
-sample_users<-as_tibble(sample(users,size=2*6987))%>%mutate(userId=value)%>%select(userId)
-movie_users<-as_tibble(sample(movies,size=2*1068))%>%mutate(movieId=value)%>%select(movieId)
+sample_users<-as_tibble(sample(users,size=6987))%>%mutate(userId=value)%>%select(userId)
+movie_users<-as_tibble(sample(movies,size=1068))%>%mutate(movieId=value)%>%select(movieId)
 small_edx <-edx %>% 
   semi_join(movie_users, by = "movieId") %>%
   semi_join(sample_users, by = "userId")
