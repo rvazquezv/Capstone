@@ -496,7 +496,7 @@ summary(train_set)
 and also test set
 
 
-```{r Partitioning edx dataset, message=FALSE}
+```{r Partitioning 2 edx dataset, message=FALSE}
 summary(test_set)
 
 ```
