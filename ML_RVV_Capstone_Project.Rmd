@@ -467,6 +467,8 @@ edx<-edx %>% mutate(sum_b_g=0)
 
 Now, I am ready to create a train and a test set to assess the accuracy of the models I will implement. 
 
+Once done, let's explore train set
+
 ```{r Partitioning edx dataset, message=FALSE}
 
 ## Selecting a random seed to allow replicability
@@ -488,11 +490,20 @@ test_set <-test_set %>%
   semi_join(train_set, by = "userId")
 
 summary(train_set)
+```
+
+
+and also test set
+
+
+```{r Partitioning edx dataset, message=FALSE}
 summary(test_set)
 
 ```
 
-And finally I can start to implement the candidate models
+It is curious to see that despite the size volume, the distributions of the users, movies and ratings on both subset seem quite alike. 
+
+Now, I am ready to start to implement candidate models
 
 \newpage  
 
@@ -577,13 +588,21 @@ Following recommendations made by The BellKor Solution pdf, averages are shrunk 
 In fact the proposed formula for regularizing $b_{i}$ is:
 $$ b_{i}=\frac{Σ_{u∈R(i)}·(r_{u,i}-\mu)}{λ_{1} + |R(i)|} $$
 
+where R(i) is the set of ratings done on movie 'i',  |R(i)| the length or cardinality of this subset and $\mu$ the average of all ratings. So for each user 'u' rating movie 'i' I will aggregate the difference between the rating $r_{u,i}$ and the average $\mu$ and instead of dividing by $|R(i)|$ as a normal average would consist of, I add a penalization term on the denominator $λ_{1}$ to be determined
+
 and  the proposed formula for regularizing  $b_{u}$ is:
 $$ b_{u}=\frac{Σ_{i∈R(u)}·(r_{u,i}-\mu-b_{i})}{λ_{2} + |R(u)|} $$
 
+where R(u) is the set of ratings done by user 'u',  |R(u)| the  cardinality of this subset, $\mu$ the average of all ratings,$b_{i}$ the effect on movies previouly calculated and  $λ_{2}$ the regularization parameter to calculate  
+
+
+Taking a closer look to these formulas, they are almost alike to normal averages but increasing the denominator with a parameter that shrunk the averages toward zero as previously explained .
 
 For this reason I created the functions lambda1 and lambda2 which will allow me to identify the best values of $λ_1$ and $λ_2$. 
 
 Finally, note that to prevent any unexpected problem such as syntax issues, I decided to initialize the values of all parameter
+
+After applying lambda1 function the optimal value for $λ_1$ obtained is: 
 
 ```{r Baseline 2.1 movies bias + regularization, message=FALSE}
 ################## 2.1. Adding movies bias regularized 
@@ -643,6 +662,9 @@ Results
 
 
 Results are still improving, but I will try to do it better. So let`s try also regularization on user bias 
+
+After applying lambda2 function the optimal value for $λ_2$ obtained is: 
+
 
 ```{r Baseline 3.1 movies bias reg + user bias reg, message=FALSE}
 ################## 3.1. Adding user bias regularized 
@@ -719,7 +741,8 @@ so following their path I have built first of all time bias $b_{i}$ and secondly
 Firstly, regarding $b_{i}$, they decided to split the item biases into time-based bins, using a constant item bias for each time period:
 $$b_{i}(t) = bi +b_{i,Bin(t)}$$
 
-In their paper they state that to choose the bins they have considered periods of time of around thirty weeks, but these considerations do not work well enough in my case so I created bins function assuming an arbitrary number of 10 bins that optimize the time split between each ot them as follows
+This formula means that instead of calculating the average bias for each movie and keep it constant all through the time, it is preferable to split it discretely on tranches or bins, and calculating the degradation or improvement of each movie bias during each of those periods
+In their paper they state that to choose the bins they have considered periods of time of around thirty weeks, but these considerations do not work well enough in my case so I created bins function assuming an arbitrary number of 10 bins that optimize the time split between each of them as follows
 
 ```{r Bin election optimization, message=FALSE}
 m <- seq(480, 880, 100)
@@ -734,10 +757,9 @@ so based on this approach I split bins in around `r format(n1,big.mark=",",scien
 
 Secondly, regarding $b_{u}$, to calculate user biases as a function of time they used the next function:
 $$dev_{u}(t)=α_{u}·sign(t −t_{u})·|t −t_{u}|^\beta$$
-where α and β are determined by validation on the test set. In this case I took the same β referred in the paper and then tried to optimize α and β via dev1 and dev2 functions
+where $t −t_{u}|$ is the absolute difference between the day of the rating and the average rating date ie how far we are from average rating activity done ny user 'u', α and β parameters to be determined by validation on the test set. In this case I took the same β referred in the paper and then tried to optimize α and β via dev1 and dev2 functions
 
-Next pieces of code show these attempts
-
+The effect of this time dependent inclusion on bias $b_{i}$ the optimal values for α and β and the effect of time on bias $b_{u}$ are shown below:
 
 ```{r Baseline  4.1  movie rating date bias, message=FALSE}
 ################## 4.1 Adding movies bias regularized as a function of time segmented in bins
@@ -898,7 +920,7 @@ all_genres_stats %>% ggplot(aes(x=genre,y=mu)) +
 ```
 
 
-And finally let's aggregate genre bias to test_set dataset for all genres present in each movie
+And finally let's aggregate genre bias to test_set dataset for all genres present in each movie, obtaining following results:
 
 
 ```{r Baseline  5.4   genre bias , message=FALSE}
@@ -932,7 +954,7 @@ Results<-rbind(Results,tibble(method = "Movie Bias reg + User bias reg+ time eff
 Results
 ```
 
-Comparing Figure 4, Figure 5 and Figure 11 and also RMSE and MAE calculated for each of those process it is possible to figure out the influence of each of those bias on final predictions, and which effects seem to affect more to final predictions 
+At this point, comparing Figure 4, Figure 5 and Figure 11 and also RMSE and MAE calculated for each of those process it is possible to figure out the influence of each of those bias on final predictions, and which effects seem to affect more to final predictions 
 
 
 ### 2.3.2 MATRIX FACTORIZATION
@@ -1094,7 +1116,7 @@ s<-svd(z)
 
 ```
 
-Thus, considering 50 eigenvalues we are able to explain `r format(100 * sum(s$d[1:50]^2) / sum(s$d^2), big.mark=",",scientific=F)` % of the variability. So I will re-build my prediction on residuals as follows: 
+Thus, considering 50 eigenvalues we are able to explain `r format(100 * sum(s$d[1:50]^2) / sum(s$d^2), big.mark=",",scientific=F)` % of the variability. So I will re-build my prediction on residuals based on those 50 eigenvalues. 
 
 ```{r smaller matrix factorization 4 results, message=FALSE}
 z_hat <- with(s,sweep(u[, 1:50], 2, d[1:50], FUN="*") %*% t(v[, 1:50]))
@@ -1134,9 +1156,9 @@ small_Results
 # 3.Results
 
 
-After comparing results obtained by the two approaches explored, it seems obvious that matrix factorization seems more promising. Nevertheless the gain obtained in terms of RMSE is only `r format(small_Results$RMSE[2]-small_Results$RMSE[3] , big.mark=",",scientific=F)` which does not seem enough to compensate computational resources needed.
+After comparing results obtained by the two approaches explored, it seems obvious that matrix factorization seems promising. Nevertheless the gain obtained in terms of RMSE is only `r format(small_Results$RMSE[2]-small_Results$RMSE[3] , big.mark=",",scientific=F)` which does not seem enough to compensate computational resources needed.
 
-For this reason I decided to choose "`r Results$method[8]`" as my final model
+For this reason I decided to choose the linear model "`r Results$method[8]`" as my final model
 
 AS I have modified original edx dataset to be able to process some data, it is also needed to transform validation dataset to change the format of the date, to extract the release year and to add the genre bias aggregator initialized to zero
 
@@ -1160,8 +1182,7 @@ for(i in (1:length(all_genres$genre))){
 head(validation)
 ```
 
-I calculate the results of my final model on the validation set as follows:
-
+I calculate the results of my final model on the validation set 
 
 ```{r validation 2, message=FALSE}
 final_prediction <- validation %>% 
