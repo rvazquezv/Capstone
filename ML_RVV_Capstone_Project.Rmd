@@ -15,7 +15,7 @@ output:
 # 1.Introduction
 
 
-From 2006 to 2009, Netflix sponsored a competition, offering a grand prize of $1,000,000 to the team that could take an offered dataset of over 100 million movie ratings and return recommendations that were 10% more accurate than those offered by the company's existing recommender system
+From 2006 to 2009, Netflix sponsored a competition, offering a grand prize of $1,000,000 to the team that could take an offered dataset of over 100 million movie ratings and return recommendations that were 10% more accurate than those offered by the company's existing recommender system.
 
 BellKor's Pragmatic Chaos team won the contest on 2009 earning the US$1,000,000 prize. Through all this process, R. Bell, Y. Koren and C. Volinsky members of the aforementioned team, wrote several papers on their work and  researchs.    
 
