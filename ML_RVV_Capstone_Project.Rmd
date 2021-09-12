@@ -501,7 +501,7 @@ summary(test_set)
 
 ```
 
-It is curious to see that despite the size volume, the distributions of the users, movies and ratings on both subset seem quite alike. 
+It is curious to see that despite the size of both datasets, the distributions of the users, movies and ratings on both subsets seem quite alike. 
 
 Now, I am ready to start to implement candidate models
 
@@ -534,7 +534,9 @@ In doing so, the first baseline stage will be the naive one, just only calculati
 
 $$Y_{u,i}=\mu+\epsilon_{u,i}$$  
 
-where $Y_{u,i}$ are the ratings done by user 'u' on  movie 'and'i' $\mu$ the global average and $\epsilon_{u,i}$ the error commited on prediction done for each couple (user,movie)
+where $Y_{u,i}$ are the ratings done by user 'u' on  movie 'and'i', $\mu$ the global average and $\epsilon_{u,i}$ the error committed on prediction done for each couple (user,movie)
+
+Results obtained with naive baseline model are the following ones:
 
 ```{r Baseline 1 Naive, message=FALSE}
 ###############################################################################
@@ -561,29 +563,29 @@ Statistics textbooks refer to the  bs as effects. However, in the Netflix challe
 
 The distribution of this $b_{i}$ effect can be observed in the following plot
 
+
 ```{r Baseline 2 movies bias, message=FALSE}
 ################## 2. Adding movies bias
-
 mu <- mean(train_set$rating) 
 movie_avgs <- train_set %>% 
   group_by(movieId) %>% 
   summarize(b_i = mean(rating - mu))
-
 qplot(b_i, data = movie_avgs, bins = 10, color = I("black")) +
   labs(caption = "Figure 4")
-
-
 predicted_ratings <- test_set %>% 
   left_join(movie_avgs, by='movieId') %>%
   mutate(pred = mu + b_i) %>%
   pull(pred)
 movbias_rmse<-RMSE(predicted_ratings, test_set$rating)
 movbias_mae<-MAE(predicted_ratings, test_set$rating)
-
 ## Save results to table
 Results<-rbind(Results,tibble(method = "Movie Bias", RMSE = movbias_rmse, MAE = movbias_mae))
-Results
+```
 
+And now results obtained are:
+
+```{r Baseline 2 movies bias results, message=FALSE}
+Results
 ```
 
 Results seem better now but still far from desired ones
@@ -593,15 +595,15 @@ Following recommendations made by The BellKor Solution pdf, averages are shrunk 
 In fact the proposed formula for regularizing $b_{i}$ is:
 $$ b_{i}=\frac{Σ_{u∈R(i)}·(r_{u,i}-\mu)}{λ_{1} + |R(i)|} $$
 
-where R(i) is the set of ratings done on movie 'i',  |R(i)| the length or cardinality of this subset and $\mu$ the average of all ratings. So for each user 'u' rating a movie 'i', I will aggregate the difference between its rating $r_{u,i}$ and the average $\mu$ and instead of dividing by $|R(i)|$ as a normal average would consist of, I add a penalization term on the denominator $λ_{1}$ to be determined
+where R(i) is the set of ratings done on movie 'i',  |R(i)| the length or cardinality of this subset and $\mu$ the average of all ratings. So for each user 'u' rating a movie 'i', I will aggregate the difference between its rating $r_{u,i}$ and the average $\mu$ and instead of dividing by $|R(i)|$ as a normal average would consist of, I add a penalization term on the denominator $λ_{1}$ to be determined later.
 
 Similarly,  the proposed formula for regularizing  $b_{u}$ is:
 $$ b_{u}=\frac{Σ_{i∈R(u)}·(r_{u,i}-\mu-b_{i})}{λ_{2} + |R(u)|} $$
 
-where R(u) is the set of ratings done by user 'u',  |R(u)| the  cardinality of this subset, $\mu$ the average of all ratings,$b_{i}$ the effect on movies previously calculated and  $λ_{2}$ the regularization parameter to calculate  
+where R(u) is the set of ratings done by user 'u',  |R(u)| the  cardinality of this subset, $\mu$ the average of all ratings,$b_{i}$ the effect on movies previously calculated and  $λ_{2}$ the regularization parameter to calculate.  
 
 
-Taking a closer look to these formulas, they are almost alike to normal averages but increasing the denominator with a parameter that shrunk the averages toward zero as previously explained .
+Taking a closer look to these formulas, they are almost alike to normal averages but increasing the denominator with a parameter that shrunk the averages toward zero as previously explained.
 
 For this reason I created the functions lambda1 and lambda2 which will allow me to identify the best values of $λ_1$ and $λ_2$. 
 
@@ -611,29 +613,29 @@ After applying lambda1 function the optimal value for $λ_1$ obtained is:
 
 ```{r Baseline 2.1 movies bias + regularization, message=FALSE}
 ################## 2.1. Adding movies bias regularized 
-
 l <- seq(0, 10, 0.25)
 l1<-l[which.min(sapply(l,lambda1))]
 l1
-
 movie_avgs_reg<- train_set %>% 
   group_by(movieId) %>% 
   summarize(b_i_reg = sum(rating - mu)/(n()+l1),first_rate_i=min(date))
-
 predicted_ratings <- 
   test_set %>% 
   left_join(movie_avgs_reg, by='movieId') %>%
   mutate(pred = mu + b_i_reg) %>%
   pull(pred)
-
 movbiasreg_rmse<-RMSE(predicted_ratings, test_set$rating)
 movbiasreg_mae<-MAE(predicted_ratings, test_set$rating)
-
-
 ## Save results to table
 Results<-rbind(Results,tibble(method = "Movie Bias regularized", RMSE = movbiasreg_rmse, MAE = movbiasreg_mae))
+
+```
+And RMSE and MAE of models are:
+ 
+```{r Baseline 2.1 movies bias + regularization results, message=FALSE}
 Results
 ```
+
 
 Regularization does not seem to improve too much, but at least improves so I decided to keep it as part of my model.The same as with movie effect (movies bias), there seems to be clear that some users tend to be more critic than others so this effect on users will be the user bias $b_{u}$ and next step will be to calculate it:
 
@@ -663,15 +665,16 @@ movuserbias_mae<-MAE(predicted_ratings, test_set$rating)
 
 ## Save results to table
 Results<-rbind(Results,tibble(method = "Movie Bias reg + User bias", RMSE = movuserbias_rmse,MAE = movuserbias_mae))
-Results
+```
+and improves the model like this:
 
+```{r Baseline 3 movies bias reg + user bias, message=FALSE}
+Results
 ```
 
-
-Results are still improving, but I will try to do it better. So let`s try also regularization on user bias 
+Despite improving,I will try to do it better. So let`s try also regularization on user bias 
 
 After applying lambda2 function the optimal value for $λ_2$ obtained is: 
-
 
 ```{r Baseline 3.1 movies bias reg + user bias reg, message=FALSE}
 ################## 3.1. Adding user bias regularized 
@@ -696,7 +699,11 @@ movuserbiasreg_mae<-MAE(predicted_ratings, test_set$rating)
 ## Save results to table
 Results<-rbind(Results,tibble(method = "Movie Bias reg + User bias reg", RMSE = movuserbiasreg_rmse,MAE = movuserbiasreg_mae))
 Results
+```
+ and applying regularization on user bias means:
 
+```{r Baseline 3.1 movies bias reg + user bias reg results, message=FALSE}
+Results
 ```
 
 The same as movie bias regularization, user bias regularization does not seem to improve too much, but at least improves a little bit so I also decided to keep it as part of my model.
@@ -742,11 +749,11 @@ edx %>% group_by(movieId) %>%
 
 ```
 
-Figure 6 and Figure 7 are the same plot but a diffent scale (from weeks to moths) showing the evolution of average rating across time.
+Figure 6 and Figure 7 are the same plot but at a diffent scale (from weeks to moths) showing the evolution of average rating across time.
 
 Figure 8 plots average rating against the number ot times ratings on a film were produced, proving that the more a film is rated the better its rating becomes
 
-And finally Figure 9 shows us the number of ratings done each year
+And finally Figure 9 shows us the distribution of the number of ratings done each year
 
 Thus following Bellkor's path, I have built first of all time bias $b_{i}$ and secondly user bias $b_{u}$ as functions of time.
 
@@ -754,7 +761,7 @@ Firstly, regarding $b_{i}$, they decided to split the item biases into time-base
 $$b_{i}(t) = bi +b_{i,Bin(t)}$$
 
 This formula means that instead of calculating the average bias for each movie and keep it constant all through the time, it is preferable to split it discretely on tranches or bins, and calculating the degradation or improvement of each movie bias during each of those periods.
-In their paper they state that to choose the bins they have considered periods of time of around thirty weeks, but these considerations do not work well enough in my case so I created bins function assuming an arbitrary number of 10 bins that optimize the time split between each of them as follows
+In their paper they state that to choose the bins they have considered periods of time of around thirty weeks, but these considerations do not work well enough in my case so I created a specific function called "bins" assuming an arbitrary number of 10 bins that optimize the time split between each of those tranches as follows
 
 ```{r Bin election optimization, message=FALSE}
 m <- seq(480, 880, 100)
@@ -763,16 +770,15 @@ qplot(m,m1) + labs(caption = "Figure 10")
 n1<-m[which.min(m1)]
 ```
 
-so based on this approach I split bins in around `r format(n1,big.mark=",",scientific=F)` days each. To be completely right this  arbitrary number of bins should also be optimized, but due to the computational time taken and small profit obtained I decided to keep this arbitrary ones.
+so based on this approach I split bins in around `r format(n1,big.mark=",",scientific=F)` days each. To be completely right this  arbitrary number of bins should also be optimized, but due to the computational time taken and small profit obtained I decided to keep these arbitrary ones.
 
 
 
 Secondly, regarding $b_{u}$, to calculate user biases as a function of time they used the next function:
 $$dev_{u}(t)=α_{u}·sign(t −t_{u})·|t −t_{u}|^\beta$$
-where $|t −t_{u}|$ is the absolute difference between the day of the rating and the average rating date, id est, how far we are from average rating activity done by user 'u', and  α and β parameters to be determined by validation on the test set. In this case I took the same β referred in the paper and then tried to optimize α and β via dev1 and dev2 functions
+where $|t −t_{u}|$ is the absolute difference between the day of the rating and the average rating date, id est, how far we are from average rating activity done by user 'u',sign is the sign of the subtraction positive or negative, and  α and β parameters to be determined by validation on the test set. In this case I took the same β referred in the paper and then tried to optimize α and β via functions specifically created that I named dev1 and dev2.
 
-The effect of this time dependent inclusion on bias $b_{i}$ the optimal values for α and β and the effect of time on bias $b_{u}$ are shown below:
-
+The effect of this time dependent inclusion on bias $b_{i}$  can be obserded in Figure 11
 ```{r Baseline  4.1  movie rating date bias, message=FALSE}
 ################## 4.1 Adding movies bias regularized as a function of time segmented in bins
 ## Following recommendations made by The BellKor Solution pdf bi(t) = bi +bi,Bin(t) 
@@ -815,17 +821,20 @@ predicted_ratings <- test_set %>%
 movbiasregbin_rmse<-RMSE(predicted_ratings, test_set$rating) 
 movbiasregbin_mae<-MAE(predicted_ratings, test_set$rating)
 
-
-
 ## Save results to table
 Results<-rbind(Results,tibble(method = "Movie Bias reg + User bias reg+ time effect on movie Bias reg", RMSE = movbiasregbin_rmse, MAE = movbiasregbin_mae))
+```
+
+while results of binning $b_{i}$ are:
+```{r Baseline  4.1  movie rating date bias results, message=FALSE}
 Results
 ```
 
-Indeed this time effect is allowing to improve a little bit also
+Clearly, this binning allows to improve a little bit also
 
+In terms of optimal values for α and β 
 
-```{r Baseline  4.2  user rating date bias , message=FALSE}
+```{r Baseline  4.2  α and β, message=FALSE}
 ################## 4.2 Adding user rating date bias  
 
 ##
@@ -843,8 +852,10 @@ b <- seq(0, 1,0.2)
 devut<-sapply(b,dev2)
 b<-b[which.min(devut)]
 b
+```
 
-
+which sligthly affect the model in a positive way:  
+```{r Baseline  4.2  user rating date bias , message=FALSE}
 ## We took advantage of user_avgs_reg not only for calculating b_u_reg but also t_u, so we do not need to calculate it here
 predicted_ratings <- test_set %>% 
   left_join(movie_avgs_reg, by='movieId') %>%
@@ -878,6 +889,8 @@ At this point the “BellKor’s Pragmatic Chaos” final solution recalls that 
 Then, instead of capturing this effect, I followed  *"HarvardX - PH125.8x course: Data Science - Machine Learning"* suggestion on capturing the bias on genres as 
 $$Y_{u,i}=\mu+b_{i}+b_{u}+Σx_{u,i,k}·\beta_{k}+\epsilon_{u,i}$$  
 
+
+where $x_{u,i,k}$ 
 and mapping to my current model it turns into 
 
 $$Y_{u,i}=\mu+b_{i}+b_{i,Bin(t)}+b_{u}+α_{u}·sign(t −t_{u})·|t −t_{u}|^\beta+Σx_{u,i,k}·\beta_{k}+\epsilon_{u,i}$$  
