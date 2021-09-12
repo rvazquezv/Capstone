@@ -14,7 +14,10 @@ output:
 
 # 1.Introduction
 
-The Netflix Prize was an open competition for the best algorithm to predict user ratings for films, based on previous ratings without any other information about the users or films. BellKor's Pragmatic Chaos team won the contest on 2009 earning US$1,000,000. Through all this process, R. Bell, Y. Koren and C. Volinsky members of the aforementioned team, wrote several papers on their work and  researchs.    
+
+From 2006 to 2009, Netflix sponsored a competition, offering a grand prize of $1,000,000 to the team that could take an offered dataset of over 100 million movie ratings and return recommendations that were 10% more accurate than those offered by the company's existing recommender system
+
+BellKor's Pragmatic Chaos team won the contest on 2009 earning the US$1,000,000 prize. Through all this process, R. Bell, Y. Koren and C. Volinsky members of the aforementioned team, wrote several papers on their work and  researchs.    
 
 According to wikipedia, MovieLens is a web-based recommender system and virtual community that recommends movies for its users to watch, based on their film preferences using collaborative filtering of members' movie ratings and movie reviews. It contains about 11 million ratings for about 8500 movies.
 
@@ -31,12 +34,12 @@ knitr::opts_chunk$set(echo = FALSE,warning = FALSE)
 ```
 
 
-```{r loading-libs, message=FALSE}
 
+
+```{r loading-libs, message=FALSE}
 ###############################################################################
 ##        Open required package libraries
 ###############################################################################
-
 library(tidyverse)
 library(ggplot2)
 library(lubridate)
@@ -53,7 +56,6 @@ library(dplyr)
 ```{r loading-functions, message=FALSE}
 ###############################################################################
 ## Following Functions will also be needed for the project
-
 ###############################################################################
 ###############################################################################
 ##  Initialize parameters
@@ -64,45 +66,31 @@ l2<-5
 a<- -0.00075
 b<- 0.4
 n1<-780
-
-
 ###############################################################################
 ##       Functions specifically created for the project
 ###############################################################################
-
-
 ## RMSE function to compute Root Mean Squared errors between any pair of vectors 
 RMSE <- function(true, predicted){
   sqrt(mean((true - predicted)^2))
 }
-
-
 ## MAE function to compute Mean Absolute errors between any pair of vectors 
 MAE <- function(true, predicted){
   mean(abs(true - predicted))
 }
-
-
 ## substrRight function to substract n last characters on a string
 substrRight <- function(x, n){
   substr(x, nchar(x)-n+1, nchar(x))
 }
-
-
-
 ## rating_stats_bygenre function to calculate statistics on a data frame df by genre s
 rating_stats_bygenre<-function(df,avg,s){
   aux<- df  %>% filter(grepl(s,genres)) %>%  summarize(n=n(),mu=mean(rating),sigma=sd(rating),b_g=mean(rating - avg - b_i_reg - b_u_reg - ifelse(is.na(b_i),0,b_i) - dev_u_t))
   tibble(genre=s,n=aux$n,mu=aux$mu,sigma=aux$sigma,b_g=aux$b_g)  
 }
-
 ## agg_sum_b_g to aggregate genre bias on genre g for those movies belonging to more than one genre
 agg_sum_b_g<-function(df,g){
   auxdf<- df  %>% filter(grepl(g,genres)) %>% mutate(new_b_g=all_genres_stats$b_g[which(all_genres_stats$genre==g)]) %>% select(userId,movieId,new_b_g)
   df<- left_join(df, auxdf, by = c("userId","movieId")) %>% mutate(sum_b_g=ifelse(is.na(new_b_g),sum_b_g,sum_b_g+new_b_g)) %>% select(-new_b_g)
 }
-
-
 ## lambda1 function to regularize parameter λ1 according to The BellKor Solution pdf
 lambda1<-function(l1){
   mu <- mean(train_set$rating)
@@ -117,8 +105,6 @@ lambda1<-function(l1){
     pull(pred)
   return(RMSE(predicted_ratings, test_set$rating))
 }
-
-
 ## lambda2 function to regularize parameter λ2 according to The BellKor Solution pdf
 lambda2<-function(l2){
   mu <- mean(train_set$rating)
@@ -181,11 +167,6 @@ bins<-function(n){
     pull(pred)
   return(RMSE(predicted_ratings, test_set$rating))
 }
-
-
-
-
-
 ## dev1 function to calculate α(u) on dev_u(t) (temporal effect on user bias) according to the BellKor Solution pdf after applying  bi(t) = bi +bi,Bin(t)
 dev1<-function(a){
   movie_avgs_reg<- train_set %>% 
@@ -235,8 +216,6 @@ dev1<-function(a){
     pull(pred)
   return(RMSE(predicted_ratings, test_set$rating))
 }
-
-
 ## dev2 function to calculate β(u) on dev_u(t) (temporal effect on user bias) according to the BellKor Solution pdf after applying movies bias reg as time function bi(t) = bi +bi,Bin(t)
 dev2<-function(b){
   movie_avgs_reg<- train_set %>% 
@@ -286,8 +265,6 @@ dev2<-function(b){
     pull(pred)
   return(RMSE(predicted_ratings, test_set$rating))
 }
-
-
 ```
 
 
@@ -296,63 +273,46 @@ dev2<-function(b){
  
 ```{r loading-Harvardx-code, message=FALSE}
 # Harvardx Team Code provided to build original dataset is the following one: 
-
 ##########################################################
 # Create edx set, validation set (final hold-out test set)
 ##########################################################
-
 # Note: this process could take a couple of minutes
-
 if(!require(tidyverse)) install.packages("tidyverse", repos = "http://cran.us.r-project.org")
 if(!require(caret)) install.packages("caret", repos = "http://cran.us.r-project.org")
 if(!require(data.table)) install.packages("data.table", repos = "http://cran.us.r-project.org")
-
 library(tidyverse)
 library(caret)
 library(data.table)
-
 # MovieLens 10M dataset:
 # https://grouplens.org/datasets/movielens/10m/
 # http://files.grouplens.org/datasets/movielens/ml-10m.zip
-
 dl <- tempfile()
 download.file("http://files.grouplens.org/datasets/movielens/ml-10m.zip", dl)
-
 ratings <- fread(text = gsub("::", "\t", readLines(unzip(dl, "ml-10M100K/ratings.dat"))),
                  col.names = c("userId", "movieId", "rating", "timestamp"))
-
 movies <- str_split_fixed(readLines(unzip(dl, "ml-10M100K/movies.dat")), "\\::", 3)
 colnames(movies) <- c("movieId", "title", "genres")
-
 # if using R 4.0 or later:
 movies <- as.data.frame(movies) %>% mutate(movieId = as.numeric(movieId),
                                            title = as.character(title),
                                            genres = as.character(genres))
-
-
 movielens <- left_join(ratings, movies, by = "movieId")
-
 # Validation set will be 10% of MovieLens data
 set.seed(1, sample.kind="Rounding") # if using R 3.5 or earlier, use `set.seed(1)`
 test_index <- createDataPartition(y = movielens$rating, times = 1, p = 0.1, list = FALSE)
 edx <- movielens[-test_index,]
 temp <- movielens[test_index,]
-
 # Make sure userId and movieId in validation set are also in edx set
 validation <- temp %>% 
   semi_join(edx, by = "movieId") %>%
   semi_join(edx, by = "userId")
-
 # Add rows removed from validation set back into edx set
 removed <- anti_join(temp, validation)
 edx <- rbind(edx, removed)
-
 rm(dl, ratings, movies, test_index, temp, movielens, removed)
-
-
-
 ```
 \newpage  
+
 
 # 2 Methodology
 
@@ -596,13 +556,8 @@ $$ b_{i}=\frac{Σ_{u∈R(i)}·(r_{u,i}-\mu)}{λ_{1} + |R(i)|} $$
 
 where R(i) is the set of ratings done on movie 'i',  |R(i)| the length or cardinality of this subset and $\mu$ the average of all ratings. So for each user 'u' rating a movie 'i', I will aggregate the difference between its rating $r_{u,i}$ and the average $\mu$ and instead of dividing by $|R(i)|$ as a normal average would consist of, I add a penalization term on the denominator $λ_{1}$ to be determined later.
 
-Similarly,  the proposed formula for regularizing  $b_{u}$ is:
-$$ b_{u}=\frac{Σ_{i∈R(u)}·(r_{u,i}-\mu-b_{i})}{λ_{2} + |R(u)|} $$
 
-where R(u) is the set of ratings done by user 'u',  |R(u)| the  cardinality of this subset, $\mu$ the average of all ratings,$b_{i}$ the effect on movies previously calculated and  $λ_{2}$ the regularization parameter to calculate.  
-
-
-Taking a closer look to these formulas, they are almost alike to normal averages but increasing the denominator with a parameter that shrunk the averages toward zero as previously explained.
+Taking a closer look to regularization formulas, they are almost alike to normal averages but increasing the denominator with a parameter that shrunk the averages toward zero as previously explained.
 
 For this reason I created the functions lambda1 and lambda2 which will allow me to identify the best values of $λ_1$ and $λ_2$. 
 
@@ -674,6 +629,13 @@ Results
 ```
 
 Despite improving, I will try to do it better. So let`s try also regularization on user bias. 
+
+
+Similarly,  the proposed formula for regularizing  $b_{u}$ is:
+$$ b_{u}=\frac{Σ_{i∈R(u)}·(r_{u,i}-\mu-b_{i})}{λ_{2} + |R(u)|} $$
+
+where R(u) is the set of ratings done by user 'u',  |R(u)| the  cardinality of this subset, $\mu$ the average of all ratings,$b_{i}$ the effect on movies previously calculated and  $λ_{2}$ the regularization parameter to calculate.  
+
 
 After applying lambda2 function the optimal value for $λ_2$ obtained is: 
 
@@ -749,9 +711,9 @@ edx %>% group_by(movieId) %>%
 
 ```
 
-Figure 6 and Figure 7 are the same plot but at a diffent scale (from weeks to moths) showing the evolution of average rating across time.
+Figure 6 and Figure 7 are the same plot but at a different scale (from weeks to moths) showing the evolution of average rating across time.
 
-Figure 8 plots average rating against the number ot times ratings on a film were produced, proving that the more a film is rated the better its rating becomes.
+Figure 8 plots average rating against the number of times ratings on a film were produced, proving that the more a film is rated the better its rating becomes.
 
 And finally Figure 9 shows us the distribution of the number of ratings done each year.
 
@@ -767,8 +729,8 @@ In their paper they state that to choose the bins they have considered periods o
 m <- seq(480, 880, 100)
 m1<-sapply(m,bins)
 rmse<-m1
-number_of_bins<-m
-qplot(number_of_bins,rmse) + labs(caption = "Figure 10")
+n_days<-m
+qplot(n_days,rmse) + labs(caption = "Figure 10")
 n1<-m[which.min(m1)]
 ```
 
@@ -778,7 +740,7 @@ so based on this approach I split bins in around `r format(n1,big.mark=",",scien
 
 Secondly, regarding $b_{u}$, to calculate user biases as a function of time they used the next function:
 $$dev_{u}(t)=α_{u}·sign(t −t_{u})·|t −t_{u}|^\beta$$
-where $|t −t_{u}|$ is the absolute difference between the day of the rating and the average rating date, id est, how far the rating done by user 'u' on that day is from his average period of activity,sign is the sign of the subtraction positive or negative, and  α and β parameters to be determined by validation on the test set. In this case I took the same β referred in the paper and then tried to optimize α and β via functions specifically created that I named dev1 and dev2.
+where $|t −t_{u}|$ is the absolute difference between the day of the rating and the average rating date, id est, how far the rating done by user 'u' on that day is from his average period of activity, sign is the sign of the subtraction positive or negative, and  α and β parameters to be determined by validation on the test set. In this case I took the same β referred in the paper and then tried to optimize α and β via functions specifically created that I named dev1 and dev2.
 
 The effect of this time dependent inclusion on bias $b_{i}$  can be observed in Figure 11.
 ```{r Baseline  4.1  movie rating date bias, message=FALSE}
@@ -856,7 +818,7 @@ b<-b[which.min(devut)]
 cat("β=",b)
 ```
 
-which sligthly(almost residual) affect the model in a positive way.  It is important to note that at each step improving became more difficult, and the quantity gained in terms of RMSE or MAE is not always worhty in terms of computer resources needed and calculus time needed also.
+which sligthly(almost residual) affect the model in a positive way.  It is important to note that at each step improving became more difficult, and the quantity gained in terms of RMSE or MAE is not always worhty in terms of computer resources needed and calculus time.
 
 ```{r Baseline  4.2  user rating date bias , message=FALSE}
 ## We took advantage of user_avgs_reg not only for calculating b_u_reg but also t_u, so we do not need to calculate it here
@@ -1232,6 +1194,36 @@ I calculate the results of my final model on the validation set, obtaining a fin
 
 # 4.Conclusions
 
+Recommendation systems are algorithm designed to recommend things to the user based on many different factors. Their purpose is predicting the most likely items (goods, films, plays, books, etc) that the users are most likely to enjoy, like or even purchase. 
 
-a conclusion section that gives a brief summary of the report, its limitations and future work
 
+One of the events that energized research in recommender systems was the Netflix Prize. The Netflix Prize was an open competition for the best algorithm to predict user ratings for films, based on previous ratings without any other information about the users or films.
+
+Since then big Companies  in very different economic sectors like Netflix, Amazon, Nike, etc . use recommender systems to help their users to identify the correct product or movies for them. 
+
+
+The recommendation system deals with a large volume of information present by filtering the most important information based on the data provided by a user based on the user’s preference and interest. It finds out the match between user and item and imputes the similarities between users and items for recommendation. 
+
+There are several ways to address these systems as collaborative filtering, dimensionality reduction, matrix factorization etc
+
+On my project I tried collaborative filtering and matrix factorization and I have learned that the baseline predictors through an accurate processing of main biases could be as good as any other model and easily manageable in terms of computational cost  
+
+ I have been able to obtain 
+ 
+```{r conclussion , message=FALSE}
+Final_Results <- tibble( Final_model=Results$method[8], RMSE = final_rmse, MAE = final_mae)
+Final_Results
+```
+
+but not too much on matrix factorization while Bell and Koren write
+
+
+    It seems that models based on matrix-factorization were found to be most accurate (and thus popular), as evident by recent
+    publications and discussions on the Netflix Prize forum. We definitely agree to that, and would like to add that those 
+    matrix-factorization models also offer the important flexibility needed for modeling temporal effects and the binary view. 
+    Nonetheless, neighborhood models, which have been dominating most of the collaborative filtering literature, are still   expected to be popular due to their practical characteristics - being able to handle new users/ratings without re-training and offering  direct explanations to the recommendations.
+    
+Thus, next steps could be progressing on singular value decomposition to be able to apply SVD++ as Bellkor`s team proposed and exploring neighborhood models and gradient boosting decission trees to finally ensemble the best of them in order to improve my algoritihm
+
+
+# 5.Bibliography
