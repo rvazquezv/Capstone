@@ -528,10 +528,13 @@ Through this project I will try to follow some of this techniques and the explan
 
 ### 2.3.1 BASELINE PREDICTORS
 
+Baselines for predictive models or baseline predictors are performance evaluations for given problems in statistics. Baselines are commonly used as the first approach and the limit that should at least be reached
 
 In doing so, the first baseline stage will be the naive one, just only calculating the average stars
 
 $$Y_{u,i}=\mu+\epsilon_{u,i}$$  
+
+where $Y_{u,i}$ are the ratings done by user 'u' on  movie 'and'i' $\mu$ the global average and $\epsilon_{u,i}$ the error commited on prediction done for each couple (user,movie)
 
 ```{r Baseline 1 Naive, message=FALSE}
 ###############################################################################
@@ -555,6 +558,8 @@ As expected results are still far from being acceptable. It seems clear that som
 $$Y_{u,i}=\mu+b_{i}+\epsilon_{u,i}$$  
 
 Statistics textbooks refer to the  bs as effects. However, in the Netflix challenge papers, they refer to them as “bias,” thus I have followed the same notation. 
+
+The distribution of this $b_{i}$ effect can be observed in the following plot
 
 ```{r Baseline 2 movies bias, message=FALSE}
 ################## 2. Adding movies bias
@@ -588,12 +593,12 @@ Following recommendations made by The BellKor Solution pdf, averages are shrunk 
 In fact the proposed formula for regularizing $b_{i}$ is:
 $$ b_{i}=\frac{Σ_{u∈R(i)}·(r_{u,i}-\mu)}{λ_{1} + |R(i)|} $$
 
-where R(i) is the set of ratings done on movie 'i',  |R(i)| the length or cardinality of this subset and $\mu$ the average of all ratings. So for each user 'u' rating movie 'i' I will aggregate the difference between the rating $r_{u,i}$ and the average $\mu$ and instead of dividing by $|R(i)|$ as a normal average would consist of, I add a penalization term on the denominator $λ_{1}$ to be determined
+where R(i) is the set of ratings done on movie 'i',  |R(i)| the length or cardinality of this subset and $\mu$ the average of all ratings. So for each user 'u' rating a movie 'i', I will aggregate the difference between its rating $r_{u,i}$ and the average $\mu$ and instead of dividing by $|R(i)|$ as a normal average would consist of, I add a penalization term on the denominator $λ_{1}$ to be determined
 
-and  the proposed formula for regularizing  $b_{u}$ is:
+Similarly,  the proposed formula for regularizing  $b_{u}$ is:
 $$ b_{u}=\frac{Σ_{i∈R(u)}·(r_{u,i}-\mu-b_{i})}{λ_{2} + |R(u)|} $$
 
-where R(u) is the set of ratings done by user 'u',  |R(u)| the  cardinality of this subset, $\mu$ the average of all ratings,$b_{i}$ the effect on movies previouly calculated and  $λ_{2}$ the regularization parameter to calculate  
+where R(u) is the set of ratings done by user 'u',  |R(u)| the  cardinality of this subset, $\mu$ the average of all ratings,$b_{i}$ the effect on movies previously calculated and  $λ_{2}$ the regularization parameter to calculate  
 
 
 Taking a closer look to these formulas, they are almost alike to normal averages but increasing the denominator with a parameter that shrunk the averages toward zero as previously explained .
@@ -630,10 +635,12 @@ Results<-rbind(Results,tibble(method = "Movie Bias regularized", RMSE = movbiasr
 Results
 ```
 
-Regularization does not seem to improve too much, but at least improves so I decided to keep it as part of my model.The same as with movie effect (movies bias), there seems to be clear that some users tend to be more critic than others so this effect on users will be the user bias and next step will be to calculate it:
+Regularization does not seem to improve too much, but at least improves so I decided to keep it as part of my model.The same as with movie effect (movies bias), there seems to be clear that some users tend to be more critic than others so this effect on users will be the user bias $b_{u}$ and next step will be to calculate it:
 
 $$Y_{u,i}=\mu+b_{i}+b_{u}+\epsilon_{u,i}$$  
 
+
+Once obtained, the distribution on $b_{u}$ is shown in figure 5  
 
 ```{r Baseline 3 movies bias reg + user bias, message=FALSE}
 ################## 3.Adding user bias
@@ -735,13 +742,18 @@ edx %>% group_by(movieId) %>%
 
 ```
 
+Figure 6 and Figure 7 are the same plot but a diffent scale (from weeks to moths) showing the evolution of average rating across time.
 
-so following their path I have built first of all time bias $b_{i}$ and secondly user bias $b_{u}$ as functions of time.
+Figure 8 plots average rating against the number ot times ratings on a film were produced, proving that the more a film is rated the better its rating becomes
+
+And finally Figure 9 shows us the number of ratings done each year
+
+Thus following Bellkor's path, I have built first of all time bias $b_{i}$ and secondly user bias $b_{u}$ as functions of time.
 
 Firstly, regarding $b_{i}$, they decided to split the item biases into time-based bins, using a constant item bias for each time period:
 $$b_{i}(t) = bi +b_{i,Bin(t)}$$
 
-This formula means that instead of calculating the average bias for each movie and keep it constant all through the time, it is preferable to split it discretely on tranches or bins, and calculating the degradation or improvement of each movie bias during each of those periods
+This formula means that instead of calculating the average bias for each movie and keep it constant all through the time, it is preferable to split it discretely on tranches or bins, and calculating the degradation or improvement of each movie bias during each of those periods.
 In their paper they state that to choose the bins they have considered periods of time of around thirty weeks, but these considerations do not work well enough in my case so I created bins function assuming an arbitrary number of 10 bins that optimize the time split between each of them as follows
 
 ```{r Bin election optimization, message=FALSE}
@@ -757,7 +769,7 @@ so based on this approach I split bins in around `r format(n1,big.mark=",",scien
 
 Secondly, regarding $b_{u}$, to calculate user biases as a function of time they used the next function:
 $$dev_{u}(t)=α_{u}·sign(t −t_{u})·|t −t_{u}|^\beta$$
-where $t −t_{u}|$ is the absolute difference between the day of the rating and the average rating date ie how far we are from average rating activity done ny user 'u', α and β parameters to be determined by validation on the test set. In this case I took the same β referred in the paper and then tried to optimize α and β via dev1 and dev2 functions
+where $|t −t_{u}|$ is the absolute difference between the day of the rating and the average rating date, id est, how far we are from average rating activity done by user 'u', and  α and β parameters to be determined by validation on the test set. In this case I took the same β referred in the paper and then tried to optimize α and β via dev1 and dev2 functions
 
 The effect of this time dependent inclusion on bias $b_{i}$ the optimal values for α and β and the effect of time on bias $b_{u}$ are shown below:
 
