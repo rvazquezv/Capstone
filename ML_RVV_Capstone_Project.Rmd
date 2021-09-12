@@ -582,6 +582,7 @@ movbias_mae<-MAE(predicted_ratings, test_set$rating)
 Results<-rbind(Results,tibble(method = "Movie Bias", RMSE = movbias_rmse, MAE = movbias_mae))
 ```
 
+and can be interpreted as the distribution of the correction needed on average rating due to the effect of specific movies
 And now results obtained are:
 
 ```{r Baseline 2 movies bias results, message=FALSE}
@@ -666,13 +667,15 @@ movuserbias_mae<-MAE(predicted_ratings, test_set$rating)
 ## Save results to table
 Results<-rbind(Results,tibble(method = "Movie Bias reg + User bias", RMSE = movuserbias_rmse,MAE = movuserbias_mae))
 ```
-and improves the model like this:
 
-```{r Baseline 3 movies bias reg + user bias, message=FALSE}
+The plot in Figure 5 illustrate the distribution of the correction needed from previous model. 
+This new model improves like this:
+
+```{r Baseline 3 movies bias reg + user bias results, message=FALSE}
 Results
 ```
 
-Despite improving,I will try to do it better. So let`s try also regularization on user bias 
+Despite improving, I will try to do it better. So let`s try also regularization on user bias 
 
 After applying lambda2 function the optimal value for $λ_2$ obtained is: 
 
@@ -698,7 +701,6 @@ movuserbiasreg_mae<-MAE(predicted_ratings, test_set$rating)
 
 ## Save results to table
 Results<-rbind(Results,tibble(method = "Movie Bias reg + User bias reg", RMSE = movuserbiasreg_rmse,MAE = movuserbiasreg_mae))
-Results
 ```
  and applying regularization on user bias means:
 
@@ -778,7 +780,7 @@ Secondly, regarding $b_{u}$, to calculate user biases as a function of time they
 $$dev_{u}(t)=α_{u}·sign(t −t_{u})·|t −t_{u}|^\beta$$
 where $|t −t_{u}|$ is the absolute difference between the day of the rating and the average rating date, id est, how far we are from average rating activity done by user 'u',sign is the sign of the subtraction positive or negative, and  α and β parameters to be determined by validation on the test set. In this case I took the same β referred in the paper and then tried to optimize α and β via functions specifically created that I named dev1 and dev2.
 
-The effect of this time dependent inclusion on bias $b_{i}$  can be obserded in Figure 11
+The effect of this time dependent inclusion on bias $b_{i}$  can be observed in Figure 11
 ```{r Baseline  4.1  movie rating date bias, message=FALSE}
 ################## 4.1 Adding movies bias regularized as a function of time segmented in bins
 ## Following recommendations made by The BellKor Solution pdf bi(t) = bi +bi,Bin(t) 
@@ -989,11 +991,11 @@ On his paper Yehuda Koren writes about improving baseline predictor by applying 
 
 $$ \hat{r}_{u,i} = b_{u,i} + q_{i}^T\Biggl(p_{u}(t_{u,i})+|N(u)|^{-1/2}\sum_{j€N(u)} y_{j} \Biggr)  $$
 
-where $\hat{r}_{u,i}$ are the preditec ratings, $b_{u,i}$ the effect on users and movies previously explained on baseline model,  $|N(u)|$ the cardinality of the set of ratings provided by user u, and finally $q_{i},y_{i}$ and $p_{u}(t_{u,i})$ factors provided by matrix factorization that will capture the effects not explained yet
+where $\hat{r}_{u,i}$ are the preditec ratings, $b_{u,i}$ the effect on users and movies previously explained on baseline model,  $|N(u)|$ the cardinality of the set of ratings provided by user u, and finally $q_{i},y_{i}$ and $p_{u}(t_{u,i})$ factors provided by matrix factorization that will capture the effects not obtained yet
 
 I will try to follow what they have done and check if it also improves my current baseline model. 
 
-The typical way to perform matrix factorizations is to perform a singular value decomposition on the (sparse) ratings matrix. Rafael Irizarri on  *"HarvardX - PH125.8x course: Data Science - Machine Learning"* explained pretty well SVD and also introduced us to the way SVD was performed by different contestants on the Netflix challenge:
+The typical way to perform matrix factorizations is to perform a singular value decomposition on the (sparse) ratings matrix. Professor Rafael Irizarri on  *"HarvardX - PH125.8x course: Data Science - Machine Learning"* explained pretty well SVD and also introduced us to the way SVD was performed by different contestants on the Netflix challenge:
 
 
     The SVD and PCA are complicated concepts, but one way to understand them is that SVD is an algorithm that finds  the vectors p and q that permit us to rewrite the matrix r with m rows and n columns as:
@@ -1123,17 +1125,13 @@ colnames(z) <- with(movie_titles, title[match(colnames(z), movieId)])
 
 ```
 
-As expected due to the fact that not every user has rated every movie, there are thousand of empty values within the matrix. In order to be able to apply SVD I have replaced this missing values by zeros
-
+As expected due to the fact that not every user has rated every movie, there are thousand of empty values within the matrix. In order to be able to apply SVD I have replaced this missing values by zeros and afterwards applied Singular Value Decomposition algorithm.
 
 ```{r smaller matrix factorization 2 results, message=FALSE}
 #Erase NA values and plot explanaition on variability of the sd
 z[is.na(z)] <- 0
 
 ```
-
-
-and afterwards applied Singular Value Decomposition algorithm
 
 ```{r smaller matrix factorization 3 results, message=FALSE}
 #Applying Sigle Value Decomposition
