@@ -2,7 +2,7 @@
 title: '**ML algorithm for Harvardx Capstone Course**'
 subtitle: 'HarvardX Data Science Professional Certificate: PH125.9x Capstone 1'
 author: "Rubén Vázquez del Valle"
-date: "4/8/2021"
+date: "15/9/2021"
 output:
   html_document:
     df_print: kable
@@ -26,7 +26,7 @@ The purpose of this project is creating a movie recommendation system using 10M 
 
 To build the origin dataset Harvardx Team provided specific code to be applied after downloading the MovieLens data previously described.
 
-Once dataset was created, I have based my work on Bell and Koren's papers describing their final solution to the Netflix Prize: http://www.netflixprize.com/assets/GrandPrize2009_BPC_BellKor.pdf.
+Once dataset was created, I have based my work on Bell and Koren's papers describing their final solution to the Netflix Prize
 
 
 ```{r setup, include=FALSE}
@@ -689,6 +689,9 @@ edx %>% mutate(date = round_date(date, unit = "month")) %>%
   geom_point() +
   geom_smooth() +
   labs(caption = "Figure 7")
+```
+
+```{r Baseline reflexion on time effect 2, message=FALSE}
 
 edx %>% 
   filter(year >= 1993) %>%
@@ -711,7 +714,7 @@ edx %>% group_by(movieId) %>%
 
 ```
 
-Figure 6 and Figure 7 are the same plot but at a different scale (from weeks to moths) showing the evolution of average rating across time.
+Figure 6 and Figure 7 are the same plot but at a different scale (from weeks to months) showing the evolution of average rating across time.
 
 Figure 8 plots average rating against the number of times ratings on a film were produced, proving that the more a film is rated the better its rating becomes.
 
@@ -818,7 +821,7 @@ b<-b[which.min(devut)]
 cat("β=",b)
 ```
 
-which sligthly(almost residual) affect the model in a positive way.  It is important to note that at each step improving became more difficult, and the quantity gained in terms of RMSE or MAE is not always worhty in terms of computer resources needed and calculus time.
+which slightly(almost residual) affect the model in a positive way.  It is important to note that at each step improving became more difficult, and the quantity gained in terms of RMSE or MAE is not always worhty in terms of computer resources needed and calculus time.
 
 ```{r Baseline  4.2  user rating date bias , message=FALSE}
 ## We took advantage of user_avgs_reg not only for calculating b_u_reg but also t_u, so we do not need to calculate it here
@@ -1135,6 +1138,8 @@ small_Results<-rbind(small_Results,tibble(method = "Movie Bias  + User bias + Ma
 small_Results
 ```
 
+\newpage
+
 # 3.Results
 
 
@@ -1193,6 +1198,8 @@ I calculate the results of my final model on the validation set, obtaining a fin
 
 
 
+\newpage
+
 # 4.Conclusions
 
 Recommendation systems are algorithm designed to recommend things to the user based on many different factors. Their purpose is predicting the most likely items (goods, films, plays, books, etc) that the users are most likely to enjoy, like or even purchase. 
@@ -1227,4 +1234,16 @@ but not too much on matrix factorization while Bell and Koren write
 Thus, next steps could be progressing on singular value decomposition to be able to apply SVD++ as Bellkor`s team proposed and exploring neighborhood models and gradient boosting decission trees to finally ensemble the best of them in order to improve my algoritihm
 
 
+
+\newpage
+
 # 5.Bibliography
+
+
+ R. Bell, Y. Koren and C. Volinsky. The BellKor 2008 Solution to the Netflix Prize. 2008.
+ 
+ Y. Koren. The BellKor Solution to the Netflix Grand Prize. 2009
+ 
+ R.A. Irizarri. Introduction to Data Science. 2019
+ 
+ Y. Xie. Bookdown: Authoring Books and Technical Documents with R Markdown. 2021

@@ -11,7 +11,7 @@
 ##                         and 50 minutes in Intel(R) Core i7 5500U CPU @ 2.4GHzs (4 CPUs) 8  GB RAM 
 ##
 ##
-## INTERNET CONEXION NEEDED TO RUN SUCCESFULLY THE SCREEN TO donwload source date
+## INTERNET CONEXION NEEDED TO RUN SUCCESFULLY THE SCREEN TO download source date
 ###############################################################################
 ###############################################################################
 
